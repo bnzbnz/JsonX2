@@ -1,7 +1,9 @@
 # Delphi JsonX2
 Json Extended framework V2 for Delphi (VCL/FMX)
 
-The MIT License (MIT)
+- A project sponsored by Tixeo (https://www.Tixeo.com)
+
+The MIT License (MIT) :
 
 Copyright (c) 2020-2024 Laurent Meyer JsonX2@ea4d.com
 
