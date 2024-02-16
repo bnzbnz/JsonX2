@@ -50,7 +50,7 @@ type
     function GetIndex: variant;
     procedure SetIndex(Value: variant);
   end;
-    
+
   TSimpleObjIntf = class(TIJX2, ISimpleObjIntf, IW3DCloneable)
   public
     [JX2AttrName('_id')]
@@ -75,10 +75,12 @@ begin
 
   var Obj := W3DJSX2.Deserialize<TSimpleObj>(str);
   Memo1.Lines.Add( W3DJSX2.Serialize(Obj) );
-  Obj.Free;
 
-  var Intf := W3DJSX2.Deserialize<TSimpleObjIntf>(str);
+  var  Intf := W3DJSX2.Deserialize<TSimpleObjIntf>(str) as ISimpleObjIntf;
   Memo1.Lines.Add( W3DJSX2.Serialize(Intf) );
+
+  Intf := nil; // unecessary but ....
+  Obj.Free;
 end;
 
 function TSimpleObjIntf.GetId: variant; begin Result := Id; end;
