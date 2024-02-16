@@ -29,6 +29,7 @@ interface
 uses
     Classes
     , System.Generics.Collections
+    , System.TypInfo
     , W3DJsonX2.Obj
     , W3DJsonX2.Types
     ;
