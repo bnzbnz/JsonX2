@@ -5,7 +5,7 @@ interface
 type
 
   IW3DCloneable = interface
-  ['{222EC327-E2CC-4002-B8E0-0FEF946F04AC}']
+  ['{C6437503-760C-47EA-8F61-4B7F20BE9CA9}']
     function Clone : IW3DCloneable;
   end;
 

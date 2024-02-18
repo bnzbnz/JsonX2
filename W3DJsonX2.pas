@@ -252,7 +252,8 @@ begin
       case FindVarData(LV)^.VType of
         varEmpty:
           SetToNull(LJsonName, ASettings);
-  		  varNull: AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
+        varNull:
+          AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
         varOleStr, varString, varUString:
           AJsonObj.InternAddItem(LJsonName).Value := LV;
         varSmallInt, varInteger, varShortInt, varByte, varWord, varLongWord:
@@ -458,6 +459,7 @@ procedure TJsonX2.InternalDeserialize(
             ASettings: TJX2Settings);
 var
   i: Integer;
+  LDteTme: TDateTime;
   LFields: TArray<TRTTIField>;
   LJIdx: Integer;
   LJValue: PJsonDataValue;
@@ -505,9 +507,10 @@ begin
     begin
       if (LJValue.Typ = jdtString) then
       begin
-        if (LJValue.DateTimeValue <> 0) then
+        LDteTme := LJValue.DateTimeValue;
+        if (LDteTme <> 0) then
         begin
-          LRTTIField.SetValue(aObj, TValue(LJValue.DateTimeValue));
+          LRTTIField.SetValue(aObj, TValue(LDteTme));
         end else
           LRTTIField.SetValue(aObj, TValue(LJValue.Value));
       end
@@ -592,7 +595,7 @@ begin
         LRTTIField.SetValue(AObj, LNewVarVar);
         LJsObj := LJValue.ObjectValue;
         for i := 0 to LJsObj.count - 1 do
-          LNewVarVar.Add(LJsObj.Names[i], LJsObj.Values[LJsObj.Names[i]]);
+          LNewVarVar.Add(LJsObj.Names[i], LJsObj.Items[i].Value);
         Continue
       end else
 
@@ -623,8 +626,7 @@ begin
       end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ObjList) then
-      begin
-;
+      begin;
         LINewObjList := TIJX2ObjList.Create;
         LRTTIField.SetValue(aObj, LINewObjList);
         LINewObjList.Capacity := LJValue.ArrayValue.Count;

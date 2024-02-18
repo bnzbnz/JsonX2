@@ -165,6 +165,7 @@ type
   end;
 
   TJX2VarObjDic = class(TObjectDictionary<variant, TObject>)  // Requires AJsonXClassType Attribute(Object class type)
+    constructor Create; overload;
     function Clone: TJX2VarObjDic;
   end;
 
@@ -503,6 +504,11 @@ begin
       Result.Add(Lkv.Key, TJX2(Lkv.Value).Clone)
     else
       Result.Add(Lkv.Key, Nil);
+end;
+
+constructor TJX2VarObjDic.Create;
+begin
+  inherited Create([doOwnsValues]);
 end;
 
 destructor TJX2.Destroy;
