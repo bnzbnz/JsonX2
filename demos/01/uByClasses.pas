@@ -73,38 +73,46 @@ var
   Json: string;
   Obj, CloneObj: TComplexObj;
   Simple: TSimpleObj;
+
+  s: string;
+  d: TDateTime;
+  v: variant;
+  w: TObject;
+  y: TPair<Variant,Variant>;
+  z: TPair<Variant,TObject>;
+
 begin
 
   // Create a Json Object
   Obj := TComplexObj.Create;
-  Obj.valNull := Null;
+
+  Obj.valNull := Null;                        //Primitives ans simple types
   Obj.valString := 'a string';
   Obj.valInteger := 11;
   Obj.valBoolean := False;
   Obj.valDateTime := Now;
   Obj.valType := 'erroneous field name...';
 
-  Obj.ArrayOfVar := TJX2VarList.Create;
+  Obj.ArrayOfVar := TJX2VarList.Create;       // List of Variant (array)
   Obj.ArrayOfVar.Add('A');
   Obj.ArrayOfVar.Add('B');
 
-  Obj.ArrayOfObj := TJX2ObjList.Create;
+  Obj.ArrayOfObj := TJX2ObjList.Create;      // List of Object (array)
   Simple := TSimpleObj.Create;
   Simple.var1 := 1;
   Simple.var2 := 'one';
   Obj.ArrayOfObj.Add(Simple);
-
   Simple := TSimpleObj.Create;
   Simple.var1 := 2;
   Simple.var2 := 'two';
   Obj.ArrayOfObj.Add(Simple);
 
-  Obj.DicOfVarVar := TJX2VarVarDic.Create;
+  Obj.DicOfVarVar := TJX2VarVarDic.Create;  // Var/Var Dictionary
   Obj.DicOfVarVar.Add('a','one');
   Obj.DicOfVarVar.Add('b','two');
   Obj.DicOfVarVar.Add('c','three');
 
-  Obj.DicOfVarObj := TJX2VarObjDic.Create;
+  Obj.DicOfVarObj := TJX2VarObjDic.Create;  // Var/Obj Dictionary
   Simple := TSimpleObj.Create;
   Simple.var1 := 3;
   Simple.var2 := 'three';
@@ -128,34 +136,34 @@ begin
 
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
-  Log( 'Native Cloned Object:');
+  Log( 'Natively Cloned Object:');
   Log( W3DJSX2.Serialize(CloneObj) );
   CloneObj.Free;
 
   //Accessing values
-  var s := Obj.valString;
-  var d := Obj.valDateTime;
+  s := Obj.valString;
+  d := Obj.valDateTime;
 
   Log('ArrayOfVar :');
-  for var v in Obj.ArrayOfVar  do
+  for v in Obj.ArrayOfVar  do
     Log(v);
 
   Log('ArrayOfObj : TSimpleObj');
-  for var v in Obj.ArrayOfObj  do
+  for w in Obj.ArrayOfObj  do
   begin
-    Simple := TSimpleObj(v);
+    Simple := TSimpleObj(w);
     Log( VarToStr(Simple.var1) + ', ' + Simple.var2 );
   end;
 
   Log('DicOfVarVar :');
-  for var v in Obj.DicOfVarVar  do
-    Log( v.Key + '=> ' + v.Value);
+  for y in Obj.DicOfVarVar  do
+    Log( y.Key + '=> ' + y.Value);
 
   Log('DicOfVarObj : variant, TSimpleObj');
-  for var v in Obj.DicOfVarObj  do
+  for z in Obj.DicOfVarObj  do
   begin
-    Simple := TSimpleObj(v.Value);
-    Log( v.Key + ' => ' + VarToStr(Simple.var1) + ', ' + Simple.var2 );
+    Simple := TSimpleObj(z.Value);
+    Log( z.Key + ' => ' + VarToStr(Simple.var1) + ', ' + Simple.var2 );
   end;
 
   // Clean Up
