@@ -76,10 +76,14 @@ type
     property ArrayOfObj: IJX2ObjList read GetArrayOfObj write SetArrayOfObj;
     property DicOfVarVar: IJX2VarVarDic read GetDicOfVarVar write SetDicOfVarVar;
     property DicOfVarObj: IJX2VarObjDic read GetDicOfVarObj write SetDicOfVarObj;
+
+     property myValString: variant read GetvalString write SetvalString;
+    /// ... too lazy ...
+
   end;
 
   TComplexObj = class(TIJX2, IComplexIntf, IW3DCloneable)
-  public
+  private
     // The fields order does not matter
     valNull: variant;
     valString: variant;
@@ -100,7 +104,7 @@ type
 
     [JX2AttrClass(TIJX2VarObjDic, TSimpleObj)]  // The class of the contained object type
     DicOfVarObj: IJX2VarObjDic; // Dictionary of variant(string)/object
-
+  public
     procedure SetvalNull(v: Variant);
     function GetvalNull: variant;
     procedure SetvalString(v: Variant);
@@ -123,7 +127,6 @@ type
     function GetDicOfVarVar: IJX2VarVarDic;
     procedure SetDicOfVarObj(v: IJX2VarObjDic);
     function GetDicOfVarObj: IJX2VarObjDic;
-
   end;
 
 var
@@ -150,7 +153,7 @@ var
   Intf := TComplexObj.Create;
 
   Intf.SetvalNull(Null);
-  Intf.SetvalString('a string');
+  Intf.myValString := 'a string';             // as property
   Intf.SetvalInteger(11);
   Intf.SetvalBoolean(False);
   Intf.SetvalDateTime(Now);
@@ -174,7 +177,6 @@ var
   TIJX2VarVarDic(Intf.DicOfVarVar).Add('a','one');
   TIJX2VarVarDic(Intf.DicOfVarVar).Add('b','two');
   TIJX2VarVarDic(Intf.DicOfVarVar).Add('c','three');
-
 
   Intf.DicOfVarObj := TIJX2VarObjDic.Create;
   SimpleIntf := TSimpleObj.Create;

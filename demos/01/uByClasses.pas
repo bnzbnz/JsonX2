@@ -41,6 +41,7 @@ type
     valInteger: variant;
     valBoolean: variant;
     valDouble: variant;
+    valPhantom: variant;
     valDateTime: variant; // ISO 8601 UTC Date string
     [JX2AttrName('type')] // JsonName is a reserved Pascal keyword
     valType: variant;
@@ -86,12 +87,13 @@ begin
   // Create a Json Object
   Obj := TComplexObj.Create;
 
-  Obj.valNull := Null;                        //Primitives ans simple types
+  Obj.valNull := Null;                        //Primitives and simple types
   Obj.valString := 'a string';
   Obj.valInteger := 11;
   Obj.valBoolean := False;
   Obj.valDateTime := Now;
   Obj.valType := 'erroneous field name...';
+  VarClear(Obj.valPhantom);                   // This field/value will not appear in the generated Json
 
   Obj.ArrayOfVar := TJX2VarList.Create;       // List of Variant (array)
   Obj.ArrayOfVar.Add('A');
@@ -144,6 +146,9 @@ begin
   s := Obj.valString;
   d := Obj.valDateTime;
 
+  Log('valString : ' + Obj.valString);
+  Log('valDateTime : ' + DateTimeToStr(Obj.valDateTime));
+
   Log('ArrayOfVar :');
   for v in Obj.ArrayOfVar  do
     Log(v);
@@ -159,7 +164,7 @@ begin
   for y in Obj.DicOfVarVar  do
     Log( y.Key + '=> ' + y.Value);
 
-  Log('DicOfVarObj : variant, TSimpleObj');
+  Log('DicOfVarObj : Dictionary of variant => TSimpleObj');
   for z in Obj.DicOfVarObj  do
   begin
     Simple := TSimpleObj(z.Value);
