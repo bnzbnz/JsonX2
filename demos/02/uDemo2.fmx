@@ -1,7 +1,7 @@
 object Form2: TForm2
   Left = 0
   Top = 0
-  Caption = 'Form2'
+  Caption = 'Demo02'
   ClientHeight = 643
   ClientWidth = 929
   FormFactor.Width = 320
@@ -954,26 +954,58 @@ object Form2: TForm2
     Viewport.Width = 441.000000000000000000
     Viewport.Height = 574.000000000000000000
   end
-  object Memo2: TMemo
-    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
-    DataDetectorTypes = []
-    TextSettings.WordWrap = True
-    Align = Client
-    Size.Width = 460.000000000000000000
-    Size.Height = 594.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 2
-    Viewport.Width = 456.000000000000000000
-    Viewport.Height = 590.000000000000000000
-  end
   object Splitter1: TSplitter
     Align = Left
     Cursor = crHSplit
     MinSize = 20.000000000000000000
     Position.X = 461.000000000000000000
     Position.Y = 49.000000000000000000
-    Size.Width = 8.000000000000000000
+    Size.Width = 0.000000000000000000
     Size.Height = 594.000000000000000000
     Size.PlatformDefault = False
+  end
+  object Layout1: TLayout
+    Align = Client
+    Size.Width = 468.000000000000000000
+    Size.Height = 594.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    object Memo2: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Lines.Strings = (
+        'Deserialized Object:')
+      Align = Client
+      Size.Width = 468.000000000000000000
+      Size.Height = 360.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Viewport.Width = 464.000000000000000000
+      Viewport.Height = 356.000000000000000000
+    end
+    object Memo3: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      Lines.Strings = (
+        'Re-Serialized Object:')
+      TextSettings.WordWrap = True
+      Align = Bottom
+      Position.Y = 368.000000000000000000
+      Size.Width = 468.000000000000000000
+      Size.Height = 226.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Viewport.Width = 464.000000000000000000
+      Viewport.Height = 222.000000000000000000
+    end
+    object Splitter2: TSplitter
+      Align = Bottom
+      Cursor = crVSplit
+      MinSize = 20.000000000000000000
+      Position.Y = 360.000000000000000000
+      Size.Width = 468.000000000000000000
+      Size.Height = 8.000000000000000000
+      Size.PlatformDefault = False
+    end
   end
 end
