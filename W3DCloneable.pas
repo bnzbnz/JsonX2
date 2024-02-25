@@ -9,16 +9,7 @@ type
     function Clone : IW3DCloneable;
   end;
 
-  function Clone(AObj : IInterface): IW3DCloneable;
-
-
-implementation
-
-function Clone(AObj : IInterface): IW3DCloneable;
-begin
-  Result := (AObj as IW3DCloneable).Clone;
-end;
-
+  implementation
 
 end.
 
