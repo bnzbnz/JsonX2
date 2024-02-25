@@ -3,10 +3,13 @@ unit uByClasses;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  System.SysUtils, System.Types, System.UITypes, System.Classes,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, System.TypInfo,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Memo.Types,
   FMX.ScrollBox, FMX.Memo
+  {$IFNDEF JSX2_NOVAR}
+  , System.Variants
+  {$ENDIF}
   , System.Generics.Collections
   , RTTI
   , W3DJsonX2.Obj
