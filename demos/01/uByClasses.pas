@@ -1,4 +1,4 @@
-unit uByClasses;
+﻿unit uByClasses;
 
 interface
 
@@ -37,7 +37,7 @@ type
 
   TSimpleObject = class(TIJX2, ISimpleObject)
   private
-    Var1: TValue;
+    var1: TValue;
   public
     var2: TValue;
     procedure SetVar1(v: TValue);
@@ -59,6 +59,7 @@ type
     valString: TValue;
     valInteger: TValue;
 {$IFNDEF JSX2_NOVAR}
+    valVariantString: Variant;
     valBoolean: Variant;
     valDouble: Variant;
 {$ENDIF}
@@ -68,7 +69,7 @@ type
     valType: TValue;
 
     // Object / Interface
-    ObjectType : TSimpleObject;
+    ObjectType: TSimpleObject;
     [JX2AttrClass(TSimpleObject)]
     IntfType: IJX2;
 
@@ -122,7 +123,7 @@ end;
 
 procedure TForm2.Button1Click(Sender: TObject);
 var
-  Json: string;
+  Json, JsonBeauty: string;
   Obj, CloneObj, ReadObj: TComplexObj;
   Simple: TSimpleObject;
 
@@ -133,6 +134,9 @@ var
   y: TPair<Variant,Variant>;
   z: TPair<Variant,TObject>;
   val: TValue;
+
+  FS:  TFileStream;
+
 begin
 
 //----------------------------------------------------------------------------//
@@ -143,9 +147,10 @@ begin
   //Primitives
 
   Obj.valNull := nil;
-  Obj.valString := 'aaa';
+  Obj.valString := 'ooŘaa鱇bb😃cc';
   Obj.valInteger := 15;
 {$IFNDEF JSX2_NOVAR}
+  Obj.valVariantString := 'bbb';
   Obj.valBoolean := False;
   Obj.valDouble := 2.2;
 {$ENDIF}
@@ -207,7 +212,7 @@ begin
 {$ENDIF}
 
   Obj.StrValueDic := TJX2StrValueDic.Create;
-  Obj.StrValueDic.Add('1','B');
+  Obj.StrValueDic.Add('1', 7);
   Obj.StrValueDic.Add('2', 13);
 
   Obj.StrObjDic := TJX2StrObjDic.Create;
@@ -250,10 +255,65 @@ begin
   Log( W3DJSX2.Serialize(CloneObj) );
   CloneObj.Free;
 
-  Obj.Free;
+  JsonBeauty := JsonBeautifier(Json);
   Log('');
   Log('Json Beautifier :');
-  Log(JsonBeautifier(Json));
+  Log(JsonBeauty);
+
+  FS := TFileStream.Create('Beauty.json', fmCreate);
+  FS.WriteRawUTF8String(UTF8String(JsonBeauty));
+  FS.Free;
+
+//----------------------------------------------------------------------------//
+
+  Log('');
+  Log('String (TValue): ' + Obj.valString.AsString);
+{$IFNDEF JSX2_NOVAR}
+  Log('String (Variant): ' + Obj.valVariantString);
+{$ENDIF}
+  Log('Double: ' + FloatToStr(Obj.valDouble));
+
+  Log('ObjectType.var1: ' + Obj.ObjectType.Var1.ToString);
+  Log('IntfType.var1: ' + TSimpleObject(Obj.IntfType).Var1.ToString());
+
+  Log('VaLlist : ');
+  for var i in Obj.VaLlist do
+    Log('  ' + IntToStr(i.AsInteger));
+
+  Log('IVaLlist : ');
+  for var i in TIJX2ValueList(Obj.IVaLlist) do
+    Log(i.AsString);
+
+  Log('ObjList : ');
+  for var i in TJX2ObjList(Obj.ObjList) do
+  begin
+    var O := TSimpleObject(i);
+    Log('  ObjectType.var1: ' + o.var1.ToString);
+  end;
+
+  Log('StrValueDic : ');
+  for var i in TJX2StrValueDic(Obj.StrValueDic) do
+    Log(' ' + i.Key + ': ' + IntToStr(TValue(i.Value).asInteger));
+
+  Log('StrObjDic : ');
+  for var i in TJX2StrObjDic(Obj.StrObjDic) do
+  begin
+    var o := TSimpleObject(i.Value);
+    Log(' ' + i.Key + ' : ' + o.var1.AsString + ', ' + o.var2.AsString);
+  end;
+
+  Obj.Free;
+
+//----------------------------------------------------------------------------//
+
+  Log('Read JsonFile');
+  FS := TFileStream.Create('Beauty.json', fmOpenRead + fmShareDenyRead);
+  var RJson := FS.ReadRawString(TEncoding.UTF8);
+  FS.Free;
+
+  Obj := W3DJSX2.Deserialize<TComplexObj>(Json);
+  Log( W3DJSX2.Serialize(Obj) );
+  Obj.Free;
 
 end;
 

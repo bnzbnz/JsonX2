@@ -527,7 +527,7 @@ begin
         LSL := TStringList.Create(#0, ',', [soStrictDelimiter]);
         LSL.Capacity := LObjStrVarDic.count;
         for LStrVarDic in LObjStrVarDic do
-          LSL.Add(VariantToJSONValue(LStrVarDic.Key) + ':' + VariantToJSONValue(LStrVarDic.Value));
+          LSL.Add(StrToJSONValue(LStrVarDic.Key) + ':' + VariantToJSONValue(LStrVarDic.Value));
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
       end
@@ -540,7 +540,7 @@ begin
         LSL := TStringList.Create(#0, ',', [soStrictDelimiter]);
         LSL.Capacity := LStrValueObj.count;
         for LStrValue in LStrValueObj do
-          LSL.Add(ValueToJSONValue(LStrValue.Key) + ':' + ValueToJSONValue(LStrValue.Value));
+          LSL.Add(StrToJSONValue(LStrValue.Key) + ':' + ValueToJSONValue(LStrValue.Value));
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
       end
@@ -594,7 +594,7 @@ begin
           LJsonObj.Clear;
           InternalSerialize(LStrObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
           LJsonStr := LJsonObj.ToJSON(True);
-          LSL.Add('"' + EscapeJSONStr(LStrObjLoopClass.Key) + '"'+ ':' + LJsonStr);
+          LSL.Add(StrToJSONValue(LStrObjLoopClass.Key) + ':' + LJsonStr);
         end;
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LJsonObj.Free;
