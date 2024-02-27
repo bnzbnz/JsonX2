@@ -260,7 +260,7 @@ uses
   W3DJsonX2.RTTI
   , SysUtils
   , System.TypInfo
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
   , Variants
 {$ENDIF}
   ;
@@ -851,7 +851,7 @@ begin
   if ADest = nil then exit;
   for LField in GetFields(ADest) do
   begin
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind = tkVariant then
     begin
       LV :=  LField.GetValue(Self);

@@ -27,14 +27,14 @@ unit W3DJsonX2.RTTI;
 interface
 uses RTTI, System.Generics.Collections, SyncObjs;
 
-{$DEFINE EA4DRTTICACHE}
+{$DEFINE JSX_NOCACHE}
 
 function  GetFields(aObj: TObject): TArray<TRTTIField>;
 function  GetProps(aObj: TObject): TArray<TRTTIProperty>;
 function  GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
 function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
 var
   _Cleaner: Integer;
   _RTTIFieldsCacheDic: TDictionary<TClass, TArray<TRttiField>>;
@@ -54,7 +54,7 @@ uses W3DJsonX2.Types, W3DJsonX2.Utils;
 
 
 function GetFields(aObj: TObject): TArray<TRTTIField>;
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
 begin
@@ -74,7 +74,7 @@ end;
 {$ENDIF}
 
 function GetProps(aObj: TObject): TArray<TRTTIProperty>;
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
 begin
@@ -116,7 +116,7 @@ function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribu
   {$IFEND}
 
 begin
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
   MonitorEnter(_RTTIAttrsCacheDic);
   if not _RTTIAttrsCacheDic.TryGetValue(Field, Result) then
   begin
@@ -131,7 +131,7 @@ end;
 
 function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 begin
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
   MonitorEnter(_RTTIInstCacheDic);
   if not _RTTIInstCacheDic.TryGetValue(Field, Result) then
   begin
@@ -145,17 +145,16 @@ begin
 end;
 
 initialization
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
   _RTTIFieldsCacheDic := TDictionary<TClass, TArray<TRttiField>>.Create;
   _RTTIPropsCacheDic := TDictionary<TClass, TArray<TRttiProperty>>.Create;
   _RTTIAttrsCacheDic := TDictionary<TRTTIField, TCustomAttribute>.Create;
   _RTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
   for _Cleaner :=0 to 65535 do _JRTTICache[_Cleaner] := Nil;
   _FielddLock := TCriticalSection.Create;
-
 {$ENDIF}
 finalization
-{$IFDEF EA4DRTTICACHE}
+{$IFNDEF JSX_NOCACHE}
   _FielddLock.Free;
   _RTTIInstCacheDic.Free;
   _RTTIAttrsCacheDic.Free;

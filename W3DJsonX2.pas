@@ -85,7 +85,7 @@ var
 implementation
 uses
   RTTI
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
   , Variants
 {$ENDIF}
   , DateUtils
@@ -161,7 +161,7 @@ begin
     tkWChar: Result := AValue.asString;
     tkLString: Result := AValue.asString;
     tkWString: Result := AValue.asString;
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
     tkVariant: Result := VarToStr(AValue.AsVariant);
 {$ENDIF}
     tkArray: Success := False;
@@ -182,7 +182,7 @@ begin
   Result := '"' + EscapeJSONStr(AString) + '"';
 end;
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
 function VariantToJSONValue(AVariant: Variant; AForcedString: Boolean = False): string;
 begin
   if VarIsStr(AVariant) or AForcedString then
@@ -193,8 +193,6 @@ end;
 {$ENDIF}
 
 function ValueToJSONValue(AValue: TValue; AForcedString: Boolean = False): string;
-var
-  i: integer;
 begin
   if AForcedString or ValueIsString(AValue) then
     Result := StrToJSONValue(ValueToStr(AValue))
@@ -220,7 +218,7 @@ begin
   end;
 end;
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
 function JsonTypeToTVariant(AJValues: TJsonDataValueHelper): Variant; // TJsonDataValueHelper
 begin
   Result := null;
@@ -391,7 +389,7 @@ begin
     LJsonName := LField.Name;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
     if LAttr <> Nil then LJsonName :=  JX2AttrName(LAttr).FName;
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
       LV := LField.GetValue(AObj).AsVariant;
@@ -491,7 +489,7 @@ begin
         aJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
       end else
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarList then
       begin
         LVarListClass := TJX2VarList(LCurObj);
@@ -520,7 +518,7 @@ begin
         LSL.Free;
       end else
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2StrVarDic then
       begin
         LObjStrVarDic := TJX2StrVarDic(LCurObj);
@@ -563,7 +561,7 @@ begin
         LJsonObj.Free;
         LSL.Free;
       end else
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarObjDic then
       begin
         LObjVarObjDic := TJX2VarObjDic(LCurObj);
@@ -628,7 +626,7 @@ begin
         LSL.Free;
       end else
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2VarList) then
       begin
         LVarListIntf := TIJX2VarList(LTypedObj);
@@ -656,7 +654,7 @@ begin
         LSL.Free;
       end else
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2StrVarDic) then
       begin
         LStrVarDicIntf := TIJX2StrVarDic(LTypedObj);
@@ -714,7 +712,7 @@ begin
         LSL.Free;
       end else
 
-{$IFNDEF JSX2_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2VarObjDic) then
       begin
         LVarObjDicObj := TIJX2VarObjDic(LTypedObj);
@@ -1004,7 +1002,7 @@ begin
         LRTTIField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
         for i := 0 to LJsObj.count - 1 do
-          LNewStrVar.Add(LJsObj.Names[i], LJsObj.Items[i].Value);
+          LNewStrVar.Add(LJsObj.Names[i],LJsObj.Values[LJsObj.Names[i]]);
         Continue
       end else
 
