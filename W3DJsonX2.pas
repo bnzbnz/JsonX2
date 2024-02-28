@@ -24,6 +24,10 @@ SOFTWARE.
 
 unit W3DJsonX2;
 
+{$IFDEF W3DCLIENT}
+  {$DEFINE JSX_NOVAR}
+{$ENDIF}
+
 interface
 
 uses
@@ -314,10 +318,24 @@ procedure  TJsonX2.InternalSerialize(
           );
 var
 
+  {$IFNDEF JSX_NOVAR}
+  LV: variant;
+  Lvar: variant;
+  LVarLoop: variant;
+  LStrVarDic: TPair<string, Variant>;
+  LVarObjPair: TPair<Variant, IJX2>;
+  LVarObjLoopClass: TPair<Variant, TObject>;
+  LVarLoopClass: variant;
+  LStrVarDicObj: TJX2StrVarDic;
+  LStrVarDicIntf: IJX2StrVarDic;
+  LVarObjDicObj: TIJX2VarObjDic;
+  LVarListClass: TJX2VarList;
+  LObjStrVarDic: TJX2StrVarDic;
+  LObjVarObjDic: TJX2VarObjDic;
+  {$ENDIF}
   LJsonStr: string;
   LFields: TArray<TRTTIField>;
   LField: TRTTIField;
-  LV: variant;
   LVal: TValue;
   LJsonName: string;
   LAttr: TCustomAttribute;
@@ -329,48 +347,27 @@ var
   LJsonObj: TJsonObject;
   LObjLoop: IJX2;
   LCurIntf: IJX2;
-
   TVal:TValue;
-
   LStrValueDicIntf: IJX2StrValueDic;
-
-  LStrVarDicObj: TJX2StrVarDic;
-  LStrVarDicIntf: IJX2StrVarDic;
-
   LValObjDicObj: TJX2ValueObjDic;
   LValObjDicIntf: IJX2ValueObjDic;
-
   LStrValueObj: TJX2StrValueDic;
-
   LVarListIntf: IJX2VarList;
-  LVarLoop: variant;
-
-  //LStrObjDicIntf: IJX2StrObjDic;
-
-  LStrVarDic: TPair<string, Variant>;
   LValValLoop: TPair<TValue, TValue>;
-  LVarObjPair: TPair<Variant, IJX2>;
   LValObjPair: TPair<TValue, IJX2>;
   LStrValue: TPair<string, TValue>;
   LStrObjPair: TPair<string, IJX2>;
-
-  LVarObjDicObj: TIJX2VarObjDic;
-  LVarListClass: TJX2VarList;
   LValueListClass: TJX2ValueList;
   LObjListClass: TJX2ObjList;
   LObjLoopClass: TObject;
-  LObjStrVarDic: TJX2StrVarDic;
-  LObjVarObjDic: TJX2VarObjDic;
   LObjStrObjDic: TJX2StrObjDic;
   LObjValueObjDic: TJX2ValueObjDic;
-  LVarObjLoopClass: TPair<Variant, TObject>;
   LStrObjLoopClass: TPair<string, TObject>;
   LValueObjLoopClass: TPair<TValue, TObject>;
-  LVarLoopClass: variant;
+
   LValueLoopClass: TValue;
   LTValue: TValue;
   LDouble: Double;
-  Lvar: variant;
   LErrorMsgType: string;
 
   procedure SetToNull(LJsonName: string; ASettings: TJX2Settings);
@@ -450,11 +447,13 @@ begin
           tkWChar: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkLString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkWString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
+          {$IFNDEF JSX_NOVAR}
           tkVariant:
             begin
               Lvar := LTValue.AsVariant; // Do not remove, it will crash the Linux Compiler
               AJsonObj.InternAddItem(LJsonName).VariantValue := LVar;
             end;
+          {$ENDIF}
           tkArray: LErrorMsgType := 'tkArray';
           tkRecord: LErrorMsgType := 'tkRecord';
           tkInterface: LErrorMsgType := 'tkInterface';
@@ -784,6 +783,16 @@ procedure TJsonX2.InternalDeserialize(
             AJsonObj: TJsonObject;
             ASettings: TJX2Settings);
 var
+  {$IFNDEF JSX_NOVAR}
+  LObjStrVarDic: TJX2StrVarDic;
+  LObjVarObjDic: TJX2VarObjDic;
+  LNewVarObj: TJX2VarObjDic;
+  LNewStrVar: TJX2StrVarDic;
+  LNewVarList : TJX2VarList;
+  LINewVarList: TIJX2VarList;
+  LINewStrVarDic: TIJX2StrVarDic;
+<  LINewVarObjDic: TIJX2VarObjDic;
+  {$ENDIF}
   i: Integer;
   LDteTme: TDateTime;
   LFields: TArray<TRTTIField>;
@@ -794,23 +803,17 @@ var
   LInstance: TRTTIInstanceType;
   LAttr: TCustomAttribute;
   LNewObj: TObject;
-  LNewVarObj: TJX2VarObjDic;
   LNewStrObj: TJX2StrObjDic;
   LNewValueObj: TJX2ValueObjDic;
   LPair: TJsonNameValuePair;
-  LNewStrVar: TJX2StrVarDic;
   LJsObj : TJsonObject;
-  LNewVarList : TJX2VarList;
   LNewValueList : TJX2ValueList;
   LNewObjList: TJX2ObjList;
   LNewStrValue: TJX2StrValueDic;
   LIntf: IJX2;
-  LINewVarList: TIJX2VarList;
   LINewValList: TIJX2ValueList;
   LINewObjList: TIJX2ObjList;
-  LINewStrVarDic: TIJX2StrVarDic;
   LINewStrValueDic: TIJX2StrValueDic;
-  LINewVarObjDic: TIJX2VarObjDic;
   LINewStrObjDic: TIJX2StrObjDic;
   LTValue: TValue;
 
@@ -837,11 +840,13 @@ begin
     LRTTIField := GetFieldName(LJName);
     if LRTTIField = Nil then Continue;
 
+    {$IFNDEF JSX_NOVAR}
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
     begin
       LRTTIField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
       continue
     end else
+    {$ENDIF}
 
     if LRTTIField.FieldType.TypeKind in [tkRecord] then
     begin
@@ -892,6 +897,7 @@ begin
         Continue;
       end else
 
+      {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarObjDic then
       begin
         if LJValue.IsNull then
@@ -914,6 +920,7 @@ begin
         end;
         Continue;
       end else
+      {$ENDIF}
 
       if LInstance.MetaclassType = TJX2StrObjDic then
       begin
@@ -976,6 +983,7 @@ begin
         Continue;
       end else
 
+      {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarList then
       begin
         if LJValue.isNull then
@@ -1005,6 +1013,7 @@ begin
           LNewStrVar.Add(LJsObj.Names[i],LJsObj.Values[LJsObj.Names[i]]);
         Continue
       end else
+      {$ENDIF}
 
       if LInstance.MetaclassType = TJX2StrValueDic then
       begin
@@ -1021,6 +1030,7 @@ begin
         Continue
       end else
 
+      {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
         if LJValue.isNull then
@@ -1035,7 +1045,7 @@ begin
           LNewStrVar.Add(LJsObj.Names[i], LJsObj.Items[i].Value);
         Continue;
       end else
-
+      {$ENDIF}
       begin
         if LJValue.isNull then
         begin
@@ -1085,6 +1095,7 @@ begin
           LINewValList.Add(JsonTypeToTValue(LJValue.ArrayValue.Values[i]));
       end else
 
+      {$IFNDEF JSX_NOVAR}
       if Supports(JX2AttrClass(LAttr).FClass, IJX2VarList) then
       begin
         LINewVarList := TIJX2VarList.Create;
@@ -1103,6 +1114,7 @@ begin
         for i := 0 to LJsObj.count - 1 do
           LINewStrVarDic.Add(LJsObj.Names[i], LJsObj.Values[LJsObj.Names[i]].VariantValue);
       end else
+      {$ENDIF}
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrValueDic) then
       begin
@@ -1114,6 +1126,7 @@ begin
           LINewStrValueDic.Add(LJsObj.Names[i], JsonTypeToTValue(LJsObj.Values[LJsObj.Names[i]]));
       end else
 
+      {$IFNDEF JSX_NOVAR}
       if Supports(JX2AttrClass(LAttr).FClass, IJX2VarObjDic) then
       begin
         if LJValue.ObjectValue = Nil then Continue;
@@ -1128,6 +1141,7 @@ begin
           LINewVarObjDic.Add(LPair.Name, LIntf);
         end;
       end else
+      {$ENDIF}
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrObjDic) then
       begin

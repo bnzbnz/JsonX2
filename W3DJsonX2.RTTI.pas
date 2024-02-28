@@ -27,7 +27,7 @@ unit W3DJsonX2.RTTI;
 interface
 uses RTTI, System.Generics.Collections, SyncObjs;
 
-{$DEFINE JSX_NOCACHE}
+{.$DEFINE JSX_NOCACHE}
 
 function  GetFields(aObj: TObject): TArray<TRTTIField>;
 function  GetProps(aObj: TObject): TArray<TRTTIProperty>;

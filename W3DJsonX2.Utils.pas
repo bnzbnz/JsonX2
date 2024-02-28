@@ -24,6 +24,10 @@ SOFTWARE.
 
 unit W3DJsonX2.Utils;
 
+{$IFDEF W3DCLIENT}
+  {$DEFINE JSX_NOVAR}
+{$ENDIF}
+
 interface
 uses Sysutils, Classes;
 
@@ -49,7 +53,9 @@ type
   function  RPos(const aSubStr, aString : string; aStartPos: Integer): Integer;
   function  OnceFastReplaceStr(var Str: string; const  SubStr: string; const RplStr : string; StartPos: integer; Backward: Boolean = False): Integer;
   // Tools
+  {$IF defined(JSX_NOVAR)}
   function  IIF(Condition: Boolean; IsTrue, IsFalse: variant): variant; overload;
+  {$ENDIF}
   function  IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject; overload;
   function  StringGUID: string;
   function  DelphiGUID: string;
@@ -79,10 +85,13 @@ begin
   {$WARNINGS ON}
 end;
 
+{$IF defined(JSX_NOVAR)}
 function IIF(Condition: Boolean; IsTrue: variant; IsFalse: variant): variant;
 begin
   if Condition then Result := IsTrue else Result := IsFalse;
 end;
+{$ENDIF}
+
 
 function IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject;
 begin
