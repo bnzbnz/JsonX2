@@ -791,7 +791,7 @@ var
   LNewVarList : TJX2VarList;
   LINewVarList: TIJX2VarList;
   LINewStrVarDic: TIJX2StrVarDic;
-<  LINewVarObjDic: TIJX2VarObjDic;
+  LINewVarObjDic: TIJX2VarObjDic;
   {$ENDIF}
   i: Integer;
   LDteTme: TDateTime;
