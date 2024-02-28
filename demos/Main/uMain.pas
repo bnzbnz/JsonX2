@@ -40,11 +40,6 @@ type
     { Public declarations }
   end;
 
-
-
-
-
-
 //----------------------------------------------------------------------------//
 // Json Objectx Definition :
 
@@ -60,7 +55,7 @@ type
 
   // a simple object with property and sub. object
   // ALL OBJECTS AND INTERFACED OBJECTS ARE OWNED
-  // It means tha that you don't have to take care of their destruvtion (freeing)
+  // It means that you don't have to take care of their destruvtion (freeing)
   TSimpleObject = class(TIJX2, ISimpleObject)                                   // TSimple Object, must inherit from TIJX2 if interfaced
   private
     [JX2AttrName('var1')]                                                       // Fvar1 field name will be mapped as json "var" name
@@ -106,14 +101,14 @@ type
     {$IFNDEF JSX_NOVAR}
     [JX2AttrClass(TIJX2VaRList)]                                                // Object mapped to the variant list interface
     IVaRlist: IJX2VaRList;
-    {$ENDIF}                                                      // Interfaced variant list
+    {$ENDIF}                                                                    // Interfaced variant list
     [JX2AttrClass(TIJX2ValueList)]                                              // Object mapped to the TValue list interface
     IVaLlist: IJX2ValueList;                                                    // Interfaced TValue list
 
     // List of Objects;
     [JX2AttrClass(TSimpleObject)]
     ObjList: TJX2ObjList;
-    [JX2AttrClass(TIJX2ObjList, TSimpleObject)]                                 // Define the Interface Object of IObjList and the contained one.
+    [JX2AttrClass(TIJX2ObjList, TSimpleObject)]                                 // Define the Interface object of the IObjList interface and the contained one.
     IObjList: IJX2ObjList;
 
     // Dictionary of string/Values
@@ -121,7 +116,7 @@ type
     StrVarDic: TJX2StrVarDic;                                                   // a string/variant dictionnary
     {$ENDIF}
     StrValueDic: TJX2StrValueDic;                                               // a string/TValue dictionnary
-    [JX2AttrClass(TSimpleObject)]
+    [JX2AttrClass(TSimpleObject)]                                              // Define the object contained in the following dictionnary :
     StrObjDic: TJX2StrObjDic;                                                   // a string/TObject dictionnary
     {$IFNDEF JSX_NOVAR}
     [JX2AttrClass(TIJX2StrVarDic)]
@@ -129,7 +124,7 @@ type
     {$ENDIF}
     [JX2AttrClass(TIJX2StrValueDic)]
     IStrValueDic: IJX2StrValueDic;
-    [JX2AttrClass(TIJX2StrObjDic, TSimpleObject)]
+    [JX2AttrClass(TIJX2StrObjDic, TSimpleObject)]                               // Define the objext type and containned objects of the following Interfaced dictionnary :
     IStrObjDic: IJX2StrObjDic;
   end;
 
