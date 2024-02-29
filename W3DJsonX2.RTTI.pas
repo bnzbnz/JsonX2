@@ -24,10 +24,16 @@ SOFTWARE.
 
 unit W3DJsonX2.RTTI;
 
-interface
-uses RTTI, System.Generics.Collections, SyncObjs;
-
 {.$DEFINE JSX_NOCACHE}
+
+interface
+uses
+    RTTI
+  , System.Generics.Collections
+  , SyncObjs
+  ;
+
+
 
 function  GetFields(aObj: TObject): TArray<TRTTIField>;
 function  GetProps(aObj: TObject): TArray<TRTTIProperty>;
@@ -36,14 +42,14 @@ function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 
 {$IFNDEF JSX_NOCACHE}
 var
-  _Cleaner: Integer;
-  _RTTIFieldsCacheDic: TDictionary<TClass, TArray<TRttiField>>;
-  _RTTIPropsCacheDic: TDictionary<TClass, TArray<TRTTIProperty>>;
-  _RTTIAttrsCacheDic: TDictionary<TRTTIField, TCustomAttribute>;
-  _RTTIInstCacheDic: TDictionary<TRTTIField, TRttiInstanceType>;
-  _RTTIctx: TRttiContext;
-  _JRTTICache: array[0..65535] of TArray<TRttiField>;
-  _FielddLock : TCriticalSection;
+  _GCleaner: Integer;
+  _GRTTIFieldsCacheDic: TDictionary<TClass, TArray<TRttiField>>;
+  _GRTTIPropsCacheDic: TDictionary<TClass, TArray<TRTTIProperty>>;
+  _GRTTIAttrsCacheDic: TDictionary<TRTTIField, TCustomAttribute>;
+  _GRTTIInstCacheDic: TDictionary<TRTTIField, TRttiInstanceType>;
+  _GRTTIctx: TRttiContext;
+  _GJRTTICache: array[0..65535] of TArray<TRttiField>;
+  _GFielddLock : TCriticalSection;
 {$ELSE}
 var
   _RTTIctx: TRttiContext;
@@ -59,13 +65,13 @@ var
   CType: TClass;
 begin
   CType := aObj.ClassType;
-  MonitorEnter(_RTTIFieldsCacheDic);
-  if not _RTTIFieldsCacheDic.TryGetValue(CType, Result) then
+  MonitorEnter(_GRTTIFieldsCacheDic);
+  if not _GRTTIFieldsCacheDic.TryGetValue(CType, Result) then
   begin
-    Result :=  _RTTIctx.GetType(CType).GetFields;
-    _RTTIFieldsCacheDic.Add(CType, Result);
+    Result :=  _GRTTIctx.GetType(CType).GetFields;
+    _GRTTIFieldsCacheDic.Add(CType, Result);
   end;
-  MonitorExit(_RTTIFieldsCacheDic);
+  MonitorExit(_GRTTIFieldsCacheDic);
 end;
 {$ELSE}
 begin
@@ -79,13 +85,13 @@ var
   CType: TClass;
 begin
   CType := aObj.ClassType;
-  MonitorEnter(_RTTIPropsCacheDic);
-  if not _RTTIPropsCacheDic.TryGetValue(CType, Result) then
+  MonitorEnter(_GRTTIPropsCacheDic);
+  if not _GRTTIPropsCacheDic.TryGetValue(CType, Result) then
   begin
-    Result :=  _RTTIctx.GetType(CType).GetProperties;
-    _RTTIPropsCacheDic.Add(CType, Result);
+    Result :=  _GRTTIctx.GetType(CType).GetProperties;
+    _GRTTIPropsCacheDic.Add(CType, Result);
   end;
-  MonitorExit(_RTTIPropsCacheDic);
+  MonitorExit(_GRTTIPropsCacheDic);
 end;
 {$ELSE}
 begin
@@ -103,7 +109,7 @@ function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribu
   end;
   {$ELSE}
   var
-     Attr: TArray<TCustomAttribute>;
+    Attr: TArray<TCustomAttribute>;
   begin
     Result := Nil;
     for Attr in RTTIField.GetAttributes do
@@ -117,13 +123,13 @@ function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribu
 
 begin
 {$IFNDEF JSX_NOCACHE}
-  MonitorEnter(_RTTIAttrsCacheDic);
-  if not _RTTIAttrsCacheDic.TryGetValue(Field, Result) then
+  MonitorEnter(_GRTTIAttrsCacheDic);
+  if not _GRTTIAttrsCacheDic.TryGetValue(Field, Result) then
   begin
     Result := GetRTTIFieldAttribute(Field, AttrClass);
-    _RTTIAttrsCacheDic.Add(Field, Result);
+    _GRTTIAttrsCacheDic.Add(Field, Result);
   end;
-  MonitorExit(_RTTIAttrsCacheDic);
+  MonitorExit(_GRTTIAttrsCacheDic);
 {$ELSE}
     Result := GetRTTIFieldAttribute(Field, AttrClass);
 {$ENDIF}
@@ -132,13 +138,13 @@ end;
 function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 begin
 {$IFNDEF JSX_NOCACHE}
-  MonitorEnter(_RTTIInstCacheDic);
-  if not _RTTIInstCacheDic.TryGetValue(Field, Result) then
+  MonitorEnter(_GRTTIInstCacheDic);
+  if not _GRTTIInstCacheDic.TryGetValue(Field, Result) then
   begin
     Result := Field.FieldType.AsInstance;
-    _RTTIInstCacheDic.Add(Field, Result);
+    _GRTTIInstCacheDic.Add(Field, Result);
   end;
-  MonitorExit(_RTTIInstCacheDic);
+  MonitorExit(_GRTTIInstCacheDic);
 {$ELSE}
   Result := Field.FieldType.AsInstance;
 {$ENDIF}
@@ -146,19 +152,19 @@ end;
 
 initialization
 {$IFNDEF JSX_NOCACHE}
-  _RTTIFieldsCacheDic := TDictionary<TClass, TArray<TRttiField>>.Create;
-  _RTTIPropsCacheDic := TDictionary<TClass, TArray<TRttiProperty>>.Create;
-  _RTTIAttrsCacheDic := TDictionary<TRTTIField, TCustomAttribute>.Create;
-  _RTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
-  for _Cleaner :=0 to 65535 do _JRTTICache[_Cleaner] := Nil;
-  _FielddLock := TCriticalSection.Create;
+  _GRTTIFieldsCacheDic := TDictionary<TClass, TArray<TRttiField>>.Create;
+  _GRTTIPropsCacheDic := TDictionary<TClass, TArray<TRttiProperty>>.Create;
+  _GRTTIAttrsCacheDic := TDictionary<TRTTIField, TCustomAttribute>.Create;
+  _GRTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
+  for _GCleaner :=0 to 65535 do _GJRTTICache[_GCleaner] := Nil;
+  _GFielddLock := TCriticalSection.Create;
 {$ENDIF}
 finalization
 {$IFNDEF JSX_NOCACHE}
-  _FielddLock.Free;
-  _RTTIInstCacheDic.Free;
-  _RTTIAttrsCacheDic.Free;
-  _RTTIPropsCacheDic.Free;
-  _RTTIFieldsCacheDic.Free;
+  _GFielddLock.Free;
+  _GRTTIInstCacheDic.Free;
+  _GRTTIAttrsCacheDic.Free;
+  _GRTTIPropsCacheDic.Free;
+  _GRTTIFieldsCacheDic.Free;
 {$ENDIF}
 end.
