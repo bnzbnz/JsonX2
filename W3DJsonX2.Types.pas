@@ -305,7 +305,7 @@ destructor TIJX2.Destroy;
 var
   Field: TRTTIField;
 begin
-  for Field in W3DJsonX2.RTTI.GetRTTIFields(Self) do
+  for Field in W3DJsonX2.RTTI.GetFields(Self) do
     if Field.FieldType.TypeKind in [tkClass] then
       Field.GetValue(Self).AsObject.Free;
   inherited;
@@ -340,7 +340,7 @@ var
 begin
   if ADestIntf = nil then exit;
   LDestObj := ADestIntf as TObject;
-  for Field in GetRTTIFields(Self) do
+  for Field in GetFields(Self) do
   begin
     if (Field.FieldType.TypeKind = tkRecord) and (Field.FieldType.Handle = TypeInfo(TValue)) then
     begin
@@ -855,7 +855,7 @@ destructor TJX2.Destroy;
 var
   LField: TRTTIField;
 begin
-  for LField in W3DJsonX2.RTTI.GetRTTIFields(Self) do
+  for LField in W3DJsonX2.RTTI.GetFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
       LField.GetValue(Self).AsObject.Free;
   inherited;
@@ -880,7 +880,7 @@ var
   LTIJX2: TIJX2;
 begin
   if ADest = nil then exit;
-  for LField in GetRTTIFields(ADest) do
+  for LField in GetFields(ADest) do
   begin
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind = tkVariant then

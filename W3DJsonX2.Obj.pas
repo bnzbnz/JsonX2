@@ -34,6 +34,10 @@ unit W3DJsonX2.Obj;
   {$DEFINE JSX_NOVAR}
 {$ENDIF}
 
+{$IFDEF W3DCLIENT}
+  {$DEFINE JSX_NOVAR}
+{$ENDIF}
+
 {$IFDEF VER200}
   // Delphi 2009's ErrorInsight parser uses the CompilerVersion's memory address instead of 20.0, failing all the
   // IF CompilerVersion compiler directives
@@ -298,7 +302,9 @@ type
     function GetBoolValue: Boolean;
     function GetArrayValue: TJsonArray;
     function GetObjectValue: TJsonObject;
+    {$IFNDEF JSX_NOVAR}
     function GetVariantValue: Variant;
+    {$ENDIF}
 
     procedure SetValue(const AValue: string);
     procedure SetIntValue(const AValue: Integer);
@@ -310,7 +316,9 @@ type
     procedure SetBoolValue(const AValue: Boolean);
     procedure SetArrayValue(const AValue: TJsonArray);
     procedure SetObjectValue(const AValue: TJsonObject);
+    {$IFNDEF JSX_NOVAR}
     procedure SetVariantValue(const AValue: Variant);
+    {$ENDIF}
 
     procedure InternToJSON(var Writer: TJsonOutputWriter);
     procedure InternSetValue(const AValue: string); // skips the call to Clear()
@@ -333,7 +341,9 @@ type
     property BoolValue: Boolean read GetBoolValue write SetBoolValue;
     property ArrayValue: TJsonArray read GetArrayValue write SetArrayValue;
     property ObjectValue: TJsonObject read GetObjectValue write SetObjectValue;
+    {$IFNDEF JSX_NOVAR}
     property VariantValue: Variant read GetVariantValue write SetVariantValue;
+    {$ENDIF}
   end;
 
   // TJsonDataValueHelper is used to implement the "easy access" functionality. It is
@@ -350,7 +360,9 @@ type
     function GetBoolValue: Boolean; inline;
     function GetArrayValue: TJsonArray; inline;
     function GetObjectValue: TJsonObject; inline;
+    {$IFNDEF JSX_NOVAR}
     function GetVariantValue: Variant; inline;
+    {$ENDIF}
 
     procedure SetValue(const Value: string);
     procedure SetIntValue(const Value: Integer);
@@ -362,7 +374,9 @@ type
     procedure SetBoolValue(const Value: Boolean);
     procedure SetArrayValue(const Value: TJsonArray);
     procedure SetObjectValue(const Value: TJsonObject);
+    {$IFNDEF JSX_NOVAR}
     procedure SetVariantValue(const Value: Variant);
+    {$ENDIF}
 
     function GetArrayItem(Index: Integer): TJsonDataValueHelper; inline;
     function GetArrayCount: Integer; inline;
@@ -381,7 +395,9 @@ type
     {$ELSE}
     function GetObject(const Name: string): TJsonDataValueHelper; inline;
     {$ENDIF BCB}
+    {$IFNDEF JSX_NOVAR}
     function GetObjectVariant(const Name: string): Variant; inline;
+    {$ENDIF}
     procedure SetObjectString(const Name, Value: string); inline;
     procedure SetObjectInt(const Name: string; const Value: Integer); inline;
     procedure SetObjectLong(const Name: string; const Value: Int64); inline;
@@ -392,7 +408,9 @@ type
     procedure SetObjectBool(const Name: string; const Value: Boolean); inline;
     procedure SetArray(const Name: string; const Value: TJsonArray); inline;
     procedure SetObject(const Name: string; const Value: TJsonDataValueHelper); inline;
+    {$IFNDEF JSX_NOVAR}
     procedure SetObjectVariant(const Name: string; const Value: Variant); inline;
+    {$ENDIF}
 
     function GetObjectPath(const Name: string): TJsonDataValueHelper; inline;
     procedure SetObjectPath(const Name: string; const Value: TJsonDataValueHelper); inline;
@@ -422,8 +440,10 @@ type
     class operator Implicit(const Value: TJsonObject): TJsonDataValueHelper; overload;
     class operator Implicit(const Value: TJsonDataValueHelper): TJsonObject; overload;
     class operator Implicit(const Value: Pointer): TJsonDataValueHelper; overload;
+    {$IFNDEF JSX_NOVAR}
     class operator Implicit(const Value: TJsonDataValueHelper): Variant; overload;
     class operator Implicit(const Value: Variant): TJsonDataValueHelper; overload;
+    {$ENDIF}
 
     function IsNull: Boolean;
     
@@ -438,7 +458,9 @@ type
     property BoolValue: Boolean read GetBoolValue write SetBoolValue;
     property ArrayValue: TJsonArray read GetArrayValue write SetArrayValue;
     property ObjectValue: TJsonObject read GetObjectValue write SetObjectValue;
+    {$IFNDEF JSX_NOVAR}
     property VariantValue: Variant read GetVariantValue write SetVariantValue;
+    {$ENDIF}
 
     // Access to array item count
     property Count: Integer read GetArrayCount;
@@ -457,7 +479,9 @@ type
     property A[const Name: string]: TJsonArray read GetArray write SetArray;
     // Used to auto create objects and as default property where no Implicit operator matches
     property O[const Name: string]: TJsonDataValueHelper read {$IFDEF BCB}GetObj{$ELSE}GetObject{$ENDIF} write SetObject; default;
+    {$IFNDEF JSX_NOVAR}
     property V[const Name: string]: Variant read GetObjectVariant write SetObjectVariant;
+    {$ENDIF}
 
     property Path[const Name: string]: TJsonDataValueHelper read GetObjectPath write SetObjectPath;
   private
@@ -598,7 +622,9 @@ type
     {$ELSE}
     function GetObject(Index: Integer): TJsonObject; inline;
     {$ENDIF BCB}
+    {$IFNDEF JSX_NOVAR}
     function GetVariant(Index: Integer): Variant; inline;
+    {$ENDIF}
 
     procedure SetString(Index: Integer; const Value: string); inline;
     procedure SetInt(Index: Integer; const Value: Integer); inline;
@@ -610,7 +636,9 @@ type
     procedure SetBool(Index: Integer; const Value: Boolean); inline;
     procedure SetArray(Index: Integer; const Value: TJsonArray); inline;
     procedure SetObject(Index: Integer; const Value: TJsonObject); inline;
+    {$IFNDEF JSX_NOVAR}
     procedure SetVariant(Index: Integer; const Value: Variant); inline;
+    {$ENDIF}
 
     function GetItem(Index: Integer): PJsonDataValue; inline;
     function GetType(Index: Integer): TJsonDataType; inline;
@@ -649,7 +677,9 @@ type
     procedure Add(const AValue: Boolean); overload;
     procedure Add(const AValue: TJsonArray); overload;
     procedure Add(const AValue: TJsonObject); overload;
+    {$IFNDEF JSX_NOVAR}
     procedure Add(const AValue: Variant); overload;
+    {$ENDIF}
     function AddArray: TJsonArray;
     function AddObject: TJsonObject; overload;
     procedure AddObject(const Value: TJsonObject); overload; inline; // makes it easier to add "null"
@@ -664,7 +694,9 @@ type
     procedure Insert(Index: Integer; const AValue: Boolean); overload;
     procedure Insert(Index: Integer; const AValue: TJsonArray); overload;
     procedure Insert(Index: Integer; const AValue: TJsonObject); overload;
+    {$IFNDEF JSX_NOVAR}
     procedure Insert(Index: Integer; const AValue: Variant); overload;
+    {$ENDIF}
     function InsertArray(Index: Integer): TJsonArray;
     function InsertObject(Index: Integer): TJsonObject; overload;
     procedure InsertObject(Index: Integer; const Value: TJsonObject); overload; inline; // makes it easier to insert "null"
@@ -686,7 +718,9 @@ type
     property B[Index: Integer]: Boolean read GetBool write SetBool;
     property A[Index: Integer]: TJsonArray read GetArray write SetArray;
     property O[Index: Integer]: TJsonObject read {$IFDEF BCB}GetObj{$ELSE}GetObject{$ENDIF} write SetObject;
+    {$IFNDEF JSX_NOVAR}
     property V[Index: Integer]: Variant read GetVariant write SetVariant;
+    {$ENDIF}
 
     property Items[Index: Integer]: PJsonDataValue read GetItem;
     property Count: Integer read FCount write SetCount;
@@ -867,7 +901,10 @@ uses
     {$ELSE}
   System.DateUtils,
     {$ENDIF MSWINDOWS}
-  System.Variants, System.RTLConsts, System.TypInfo, System.Math, System.SysConst;
+  {$IFNDEF JSX_NOVAR}
+  System.Variants,
+  {$ENDIF}
+  System.RTLConsts, System.TypInfo, System.Math, System.SysConst;
 
   {$ELSE}
 
@@ -1260,10 +1297,12 @@ begin
   {$IFEND}
 end;
 
+{$IFNDEF JSX_NOVAR}
 procedure ErrorUnsupportedVariantType(VarType: TVarType);
 begin
   raise EJsonCastException.CreateResFmt(@RsVarTypeNotSupported, [VarType]);
 end;
+{$ENDIF}
 
 {$IFDEF USE_NAME_STRING_LITERAL}
 procedure AsgString(var Dest: string; const Source: string);
@@ -1510,6 +1549,7 @@ begin
   Value := V;
 end;
 
+{$IFNDEF JSX_NOVAR}
 function VarTypeToJsonDataType(AVarType: TVarType): TJsonDataType;
 begin
   case AVarType of
@@ -1534,6 +1574,7 @@ begin
     Result := jdtNone;
   end;
 end;
+{$ENDIF}
 
 class function TJsonBaseObject.JSONToDateTime(const Value: string; ConvertToLocalTime: Boolean): TDateTime;
 var
@@ -2333,6 +2374,7 @@ begin
   end;
 end;
 
+{$IFNDEF JSX_NOVAR}
 function TJsonDataValue.GetVariantValue: Variant;
 begin
   case FTyp of
@@ -2365,7 +2407,9 @@ begin
     ErrorUnsupportedVariantType(varAny);
   end;
 end;
+{$ENDIF}
 
+{$IFNDEF JSX_NOVAR}
 procedure TJsonDataValue.SetVariantValue(const AValue: Variant);
 var
   LTyp: TJsonDataType;
@@ -2396,6 +2440,7 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 procedure TJsonDataValue.InternSetArrayValue(const AValue: TJsonArray);
 begin
@@ -3827,6 +3872,7 @@ begin
 end;
 {$ENDIF BCB}
 
+{$IFNDEF JSX_NOVAR}
 function TJsonArray.GetVariant(Index: Integer): Variant;
 begin
   {$IFDEF CHECK_ARRAY_INDEX}
@@ -3835,6 +3881,7 @@ begin
   {$ENDIF CHECK_ARRAY_INDEX}
   Result := FItems[Index].VariantValue;
 end;
+{$ENDIF}
 
 function TJsonArray.GetInt(Index: Integer): Integer;
 begin
@@ -3988,6 +4035,7 @@ begin
   Data.Value := AValue;
 end;
 
+{$IFNDEF JSX_NOVAR}
 procedure TJsonArray.Add(const AValue: Variant);
 var
   Data: PJsonDataValue;
@@ -3996,6 +4044,8 @@ begin
   Data := AddItem;
   Data.VariantValue := AValue;
 end;
+{$ENDIF}
+
 
 function TJsonArray.AddArray: TJsonArray;
 begin
@@ -4108,6 +4158,7 @@ begin
   Data.Value := AValue;
 end;
 
+{$IFNDEF JSX_NOVAR}
 procedure TJsonArray.Insert(Index: Integer; const AValue: Variant);
 var
   Data: PJsonDataValue;
@@ -4116,6 +4167,7 @@ begin
   Data := InsertItem(Index);
   Data.VariantValue := AValue;
 end;
+{$ENDIF}
 
 function TJsonArray.InsertArray(Index: Integer): TJsonArray;
 begin
@@ -4260,6 +4312,7 @@ begin
   FItems[Index].ObjectValue := Value;
 end;
 
+{$IFNDEF JSX_NOVAR}
 procedure TJsonArray.SetVariant(Index: Integer; const Value: Variant);
 begin
   {$IFDEF CHECK_ARRAY_INDEX}
@@ -4268,6 +4321,7 @@ begin
   {$ENDIF CHECK_ARRAY_INDEX}
   FItems[Index].VariantValue := Value;
 end;
+{$ENDIF}
 
 function TJsonArray.GetType(Index: Integer): TJsonDataType;
 begin
@@ -5019,7 +5073,9 @@ var
   PropType: PTypeInfo;
   PropName: string;
   Item: PJsonDataValue;
+  {$IFNDEF JSX_NOVAR}
   V: Variant;
+  {$ENDIF}
 begin
   if AObject = nil then
     Exit;
@@ -5066,7 +5122,7 @@ begin
 
               tkSet:
                 SetSetProp(AObject, PropList[Index], Item.Value);
-
+              {$IFNDEF JSX_NOVAR}
               tkVariant:
                 begin
                   case Types[PropName] of
@@ -5091,6 +5147,7 @@ begin
                   end;
                   SetVariantProp(AObject, PropList[Index], V);
                 end;
+              {$ENDIF}
             end;
           end;
         end;
@@ -5173,6 +5230,7 @@ begin
             tkSet:
               InternAdd(PropName, GetSetProp(AObject, PropList[Index]));
 
+            {$IFNDEF JSX_NOVAR}
             tkVariant:
               begin
                 V := GetVariantProp(AObject, PropList[Index]);
@@ -5198,6 +5256,7 @@ begin
                   end;
                 end;
               end;
+            {$ENDIF}
           end;
         end;
       end;
@@ -7416,6 +7475,7 @@ begin
   Result.FData.FObj := nil;
 end;
 
+{$IFNDEF JSX_NOVAR}
 class operator TJsonDataValueHelper.Implicit(const Value: TJsonDataValueHelper): Variant;
 begin
   if Value.FData.FIntern <> nil then
@@ -7451,7 +7511,9 @@ begin
       ErrorUnsupportedVariantType(varAny);
     end;
 end;
+{$ENDIF}
 
+{$IFNDEF JSX_NOVAR}
 class operator TJsonDataValueHelper.Implicit(const Value: Variant): TJsonDataValueHelper;
 var
   LTyp: TJsonDataType;
@@ -7486,6 +7548,7 @@ begin
     end;
   end;
 end;
+{$ENDIF}
 
 function TJsonDataValueHelper.GetValue: string;
 begin
@@ -7693,6 +7756,7 @@ begin
     Self := Value;
 end;
 
+{$IFNDEF JSX_NOVAR}
 function TJsonDataValueHelper.GetVariantValue: Variant;
 begin
   Result := Self;
@@ -7706,6 +7770,7 @@ begin
   else
     Self := Value;
 end;
+{$ENDIF}
 
 function TJsonDataValueHelper.GetTyp: TJsonDataType;
 begin
@@ -7845,10 +7910,12 @@ begin
 end;
 {$ENDIF BCB}
 
+{$IFNDEF JSX_NOVAR}
 function TJsonDataValueHelper.GetObjectVariant(const Name: string): Variant;
 begin
   Result := ObjectValue.Values[Name];
 end;
+{$ENDIF}
 
 procedure TJsonDataValueHelper.SetObjectString(const Name, Value: string);
 begin
@@ -7900,10 +7967,12 @@ begin
   ObjectValue.Values[Name] := Value;
 end;
 
+{$IFNDEF JSX_NOVAR}
 procedure TJsonDataValueHelper.SetObjectVariant(const Name: string; const Value: Variant);
 begin
   ObjectValue.Values[Name] := Value;
 end;
+{$ENDIF}
 
 function TJsonDataValueHelper.GetObjectPath(const Name: string): TJsonDataValueHelper;
 begin

@@ -52,6 +52,7 @@ type
   function  FPos(const aSubStr, aString : string; aStartPos: Integer = 1): Integer;
   function  RPos(const aSubStr, aString : string; aStartPos: Integer): Integer;
   function  OnceFastReplaceStr(var Str: string; const  SubStr: string; const RplStr : string; StartPos: integer; Backward: Boolean = False): Integer;
+  function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
   // Tools
   {$IF defined(JSX_NOVAR)}
   function  IIF(Condition: Boolean; IsTrue, IsFalse: variant): variant; overload;
@@ -226,6 +227,19 @@ end;
 function LenStr(const Str: string): Integer; inline;
 begin
   Result :=  PInteger(@PByte(Str)[-4])^;
+end;
+
+function LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
+var
+  FS : TFileStream;
+begin
+  Result := '';
+  FS := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
+  try
+    Result := FS.ReadRawString(Encoding);
+  finally
+    FS.Free;
+  end;
 end;
 
 function FPos(const aSubStr, aString : string; aStartPos: Integer): Integer; inline;
