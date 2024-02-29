@@ -881,7 +881,7 @@ begin
            LRTTIField.SetValue(AObj, Nil);
            Continue;
         end;
-        LAttr := LRTTIField.GetAttribute<JX2AttrClass>;
+        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ValueObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
         if LJValue.ObjectValue = Nil then Continue;
@@ -905,7 +905,7 @@ begin
            LRTTIField.SetValue(AObj, Nil);
            Continue;
         end;
-        LAttr := LRTTIField.GetAttribute<JX2AttrClass>;
+        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2VarObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
         if LJValue.ObjectValue = Nil then Continue;
@@ -929,7 +929,7 @@ begin
            LRTTIField.SetValue(AObj, Nil);
            Continue;
         end;
-        LAttr := LRTTIField.GetAttribute<JX2AttrClass>;
+        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
         if LJValue.ObjectValue = Nil then Continue;
@@ -952,7 +952,7 @@ begin
            LRTTIField.SetValue(AObj, Nil);
            Continue;
         end;
-        LAttr := LRTTIField.GetAttribute<JX2AttrClass>;
+        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
         if (LJValue.IsNull) then Continue;
@@ -1063,7 +1063,7 @@ begin
     if LRTTIField.FieldType.TypeKind in [tkInterface] then
     begin
 
-      LAttr := LRTTIField.GetAttribute<JX2AttrClass>;
+      LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
       if LAttr = Nil then
         raise Exception.Create('Interface is missing JX2AttrClass : ' + LRTTIField.Name);
       if LJValue.IsNull then

@@ -39,7 +39,7 @@ var
   _Cleaner: Integer;
   _RTTIFieldsCacheDic: TDictionary<TClass, TArray<TRttiField>>;
   _RTTIPropsCacheDic: TDictionary<TClass, TArray<TRTTIProperty>>;
-  _RTTIAttrsCacheDic: TDictionary<TRTTIField, TCustomAttribute>;
+  _RTTIAttrsCacheDic: TDictionary<TRTTIField, TArray<TCustomAttribute>>;
   _RTTIInstCacheDic: TDictionary<TRTTIField, TRttiInstanceType>;
   _RTTIctx: TRttiContext;
   _JRTTICache: array[0..65535] of TArray<TRttiField>;
@@ -58,8 +58,8 @@ function GetFields(aObj: TObject): TArray<TRTTIField>;
 var
   CType: TClass;
 begin
-  CType := aObj.ClassType;
   MonitorEnter(_RTTIFieldsCacheDic);
+  CType := aObj.ClassType;
   if not _RTTIFieldsCacheDic.TryGetValue(CType, Result) then
   begin
     Result :=  _RTTIctx.GetType(CType).GetFields;
@@ -78,8 +78,8 @@ function GetProps(aObj: TObject): TArray<TRTTIProperty>;
 var
   CType: TClass;
 begin
-  CType := aObj.ClassType;
   MonitorEnter(_RTTIPropsCacheDic);
+  CType := aObj.ClassType;
   if not _RTTIPropsCacheDic.TryGetValue(CType, Result) then
   begin
     Result :=  _RTTIctx.GetType(CType).GetProperties;
@@ -95,37 +95,44 @@ end;
 
 
 function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
-
-  function GetRTTIFieldAttribute(RTTIField: TRTTIField; AttrClass: TClass): TCustomAttribute;
-  {$IF CompilerVersion >= 35.0} // Alexandria 11.0
-  begin
-    Result := RTTIField.GetAttribute(TCustomAttributeClass(AttrClass));
-  end;
-  {$ELSE}
-  var
-     Attr: TArray<TCustomAttribute>;
-  begin
-    Result := Nil;
-    for Attr in RTTIField.GetAttributes do
-      if Attr.ClassType = AttrClass then
-      begin
-          Result := Attr;
-          Break;
-      end;
-  end;
-  {$IFEND}
-
+var
+  LIdx: Integer;
+  LAttr: TArray<TCustomAttribute>;
 begin
 {$IFNDEF JSX_NOCACHE}
   MonitorEnter(_RTTIAttrsCacheDic);
-  if not _RTTIAttrsCacheDic.TryGetValue(Field, Result) then
+  Result := Nil;
+  if not _RTTIAttrsCacheDic.TryGetValue(Field, LAttr) then
   begin
-    Result := GetRTTIFieldAttribute(Field, AttrClass);
-    _RTTIAttrsCacheDic.Add(Field, Result);
+     LAttr := Field.GetAttributes;
+    _RTTIAttrsCacheDic.Add(Field, LAttr);
   end;
+  for LIdx := 0 to Length(LAttr) - 1 do
+    if LAttr[LIdx].ClassType = AttrClass then
+    begin
+      Result := LAttr[LIdx];
+      Break;
+    end;
   MonitorExit(_RTTIAttrsCacheDic);
 {$ELSE}
-    Result := GetRTTIFieldAttribute(Field, AttrClass);
+
+  {$IF CompilerVersion >= 35.0} // Alexandria 11.0
+  begin
+    Result := Field.GetAttribute(TCustomAttributeClass(AttrClass));
+  end;
+  {$ELSE}
+  begin
+    Result := Nil;
+    LAttr := Field.GetAttributes;
+    for LIdx := 0 to Length(LAttr) - 1 do
+      if LAttr[LIdx].ClassType = AttrClass then
+      begin
+          Result := LAttr[LIdx];
+          Break;
+      end;
+  end;
+  {$ENDIF}
+
 {$ENDIF}
 end;
 
@@ -148,7 +155,7 @@ initialization
 {$IFNDEF JSX_NOCACHE}
   _RTTIFieldsCacheDic := TDictionary<TClass, TArray<TRttiField>>.Create;
   _RTTIPropsCacheDic := TDictionary<TClass, TArray<TRttiProperty>>.Create;
-  _RTTIAttrsCacheDic := TDictionary<TRTTIField, TCustomAttribute>.Create;
+  _RTTIAttrsCacheDic := TDictionary<TRTTIField, TArray<TCustomAttribute>>.Create;
   _RTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
   for _Cleaner :=0 to 65535 do _JRTTICache[_Cleaner] := Nil;
   _FielddLock := TCriticalSection.Create;
