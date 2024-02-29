@@ -33,12 +33,10 @@ uses
   , SyncObjs
   ;
 
-
-
-function  GetFields(aObj: TObject): TArray<TRTTIField>;
-function  GetProps(aObj: TObject): TArray<TRTTIProperty>;
-function  GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
-function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function  GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
+function  GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
+function  GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 
 {$IFNDEF JSX_NOCACHE}
 var
@@ -59,7 +57,7 @@ implementation
 uses W3DJsonX2.Types, W3DJsonX2.Utils;
 
 
-function GetFields(aObj: TObject): TArray<TRTTIField>;
+function GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
 {$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
@@ -79,7 +77,7 @@ begin
 end;
 {$ENDIF}
 
-function GetProps(aObj: TObject): TArray<TRTTIProperty>;
+function GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
 {$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
@@ -100,7 +98,7 @@ end;
 {$ENDIF}
 
 
-function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
 
   function GetRTTIFieldAttribute(RTTIField: TRTTIField; AttrClass: TClass): TCustomAttribute;
   {$IF CompilerVersion >= 35.0} // Alexandria 11.0
@@ -135,7 +133,7 @@ begin
 {$ENDIF}
 end;
 
-function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 begin
 {$IFNDEF JSX_NOCACHE}
   MonitorEnter(_GRTTIInstCacheDic);

@@ -379,12 +379,12 @@ var
 
 begin
   if (AObj = nil) then exit;
-  LFields := GetFields(AObj);
+  LFields := GetRTTIFields(AObj);
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
     LJsonName := LField.Name;
-    LAttr := GetFieldAttribute(LField, JX2AttrName);
+    LAttr := GetRTTIFieldAttribute(LField, JX2AttrName);
     if LAttr <> Nil then LJsonName :=  JX2AttrName(LAttr).FName;
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
@@ -824,7 +824,7 @@ var
     for Result in LFields do
     begin
       if AJsonName = Result.Name then Exit;
-      AAttr := JX2AttrName(GetFieldAttribute(Result, JX2AttrName));
+      AAttr := JX2AttrName(GetRTTIFieldAttribute(Result, JX2AttrName));
       if (AAttr <> Nil) and (AAttr.FName = AJsonName) then Exit;
     end;
     Result := Nil;
@@ -832,7 +832,7 @@ var
 
 begin
   if (AJsonObj = nil) or (AObj = nil) then  Exit;
-  LFields := GetFields(AObj);
+  LFields := GetRTTIFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
     LJValue := AJsonObj.Items[LJIdx];
