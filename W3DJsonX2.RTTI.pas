@@ -117,7 +117,7 @@ begin
   MonitorExit(_RTTIAttrsCacheDic);
 {$ELSE}
 
-  {$IF CompilerVersion >= 35.0} // Alexandria 11.0
+  {$IF CompilerVersion > 34.0} // Alexandria 11, Athens 12
   begin
     Result := Field.GetAttribute(TCustomAttributeClass(AttrClass));
   end;

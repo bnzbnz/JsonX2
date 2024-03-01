@@ -295,7 +295,7 @@ begin
    FName := AName;
 end;
 
-{$REGION}
+{$ENDREGION}
 
 {$REGION 'Interfaces'}
 
@@ -335,7 +335,7 @@ var
   LNewObj: TObject;
   Field: TRttiField;
   LValue: TValue;
-   LDestObj, LFieldObj: TObject;
+  LDestObj, LFieldObj: TObject;
   LObjIntf, LFieldIntf: IJX2;
 begin
   if ADestIntf = nil then exit;
@@ -356,7 +356,8 @@ begin
     {$ENDIF}
       if Field.FieldType.TypeKind in [tkInterface] then
       begin
-        LFieldObj := field.GetValue(Self).Asinterface as TObject;
+        if not Supports(field.GetValue(Self).Asinterface, IJX2, LObjIntf) then Continue;
+        LFieldObj := LObjIntf as TObject;
         if LFieldObj <> nil then
         begin
           {$IFNDEF JSX_NOVAR}
@@ -366,6 +367,16 @@ begin
             Field.SetValue(LDestObj, LValue);
           end else
           {$ENDIF}
+          if LFieldObj is TIJX2ValueList then
+          begin
+            LValue := TValue.From<IJX2ValueList>( IJX2ValueList( TIJX2ValueList(LFieldObj).Clone ) );
+            Field.SetValue(LDestObj, LValue);
+          end else
+          if LFieldObj is TIJX2StrValueDic then
+          begin
+            LValue := TValue.From<IJX2StrValueDic>( IJX2StrValueDic( TIJX2StrValueDic(LFieldObj).Clone ) );
+            Field.SetValue(LDestObj, LValue);
+          end else
           if LFieldObj is TIJX2ObjList then
           begin
             LValue := TValue.From<IJX2ObjList>( IJX2ObjList( TIJX2ObjList(LFieldObj).Clone ) );
@@ -385,9 +396,8 @@ begin
           {$ENDIF}
           begin
             LNewObj := LFieldObj.ClassType.Create;
-            if Supports(LNewObj, IJX2, LObjIntf) then
-              if Supports(LFieldObj, IJX2, LFieldIntf) then
-                IJX2(LFieldIntf).CloneTo(LObjIntf);
+            if not Supports(LNewObj, IJX2, LObjIntf) then continue;
+            TIJX2(LFieldObj).CloneTo(LObjIntf);
             Field.SetValue(LDestObj, LNewObj);
           end;
         end;
@@ -749,7 +759,7 @@ end;
 
   {$ENDREGION 'Interfaces'}
 
-  {$REGION 'Classes'}
+{$REGION 'Classes'}
 
 function TJX2ValueList.Clone: TJX2ValueList;
 var
