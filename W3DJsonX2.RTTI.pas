@@ -99,6 +99,7 @@ var
   LIdx: Integer;
   LAttr: TArray<TCustomAttribute>;
 begin
+
 {$IFNDEF JSX_NOCACHE}
   MonitorEnter(_RTTIAttrsCacheDic);
   Result := Nil;

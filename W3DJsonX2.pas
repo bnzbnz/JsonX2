@@ -77,8 +77,8 @@ type
     destructor Destroy; override;
     function Serialize(Obj: TObject; ASettings: TJX2Settings = []): string; overload;
     function Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string; overload;
-    function Deserialize<T: class, constructor>(AJsonStr: string; ASettings: TJX2Settings = []): T; overload;
-    function Deserialize(AIntfClass: TClass; AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
+    function Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []): T; overload;
+    function Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
   end;
 
   function JsonBeautifier(AJsonStr : string): string;
@@ -1169,7 +1169,7 @@ begin
    end;
 end;
 
-function TJsonX2.Deserialize<T>(AJsonStr: string; ASettings: TJX2Settings = []): T;
+function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings = []): T;
 var
   LJsonObj: TJsonBaseObject;
   LObj: T;
@@ -1195,7 +1195,7 @@ begin
   end;
 end;
 
-function TJsonX2.Deserialize(AIntfClass: TClass; AJsonStr: string; ASettings: TJX2Settings = []): IJX2;
+function TJsonX2.Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2;
 var
   LJsonObj: TJsonBaseObject;
   LTIObj: TObject;
