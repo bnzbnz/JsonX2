@@ -40,12 +40,10 @@ uses
 type
 
   TJX2Setting = (
-    jxoReturnEmptyObject,
-    jxoReturnEmptyJsonString,
-    jxoUnassignedToNull,
-    jxoWarnOnMissingField,
-    jxoRaiseException,
-    jxoPropertiesOnly
+    jxExplicitBinding         // Serialize/Deserialize only fields having an explicit JX2AttrName attribut
+    , jxoRaiseException
+    , jxoUnassignedToNull
+    , jxoReturnEmptyJsonString
   );
   TJX2Settings = set of TJX2Setting;
 

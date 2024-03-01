@@ -385,7 +385,8 @@ begin
   begin
     LJsonName := LField.Name;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
-    if LAttr <> Nil then LJsonName :=  JX2AttrName(LAttr).FName;
+    if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
+    if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
@@ -816,16 +817,19 @@ var
   LINewStrValueDic: TIJX2StrValueDic;
   LINewStrObjDic: TIJX2StrObjDic;
   LTValue: TValue;
+  LExplicit: Boolean;
 
-  function GetFieldName(AJsonName: string): TRTTIField;
+  function GetFieldName(AJsonName: string; var AExplicit: Boolean): TRTTIField;
   var
     AAttr: JX2AttrName;
   begin
+    AExplicit := False;
     for Result in LFields do
     begin
-      if AJsonName = Result.Name then Exit;
       AAttr := JX2AttrName(GetFieldAttribute(Result, JX2AttrName));
-      if (AAttr <> Nil) and (AAttr.FName = AJsonName) then Exit;
+      AExplicit := (AAttr <> Nil) and (AAttr.FName = AJsonName);
+      if AExplicit then Exit;
+      if AJsonName = Result.Name then Exit;
     end;
     Result := Nil;
   end;
@@ -837,9 +841,9 @@ begin
   begin
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
-    LRTTIField := GetFieldName(LJName);
+    LRTTIField := GetFieldName(LJName, LExplicit);
     if LRTTIField = Nil then Continue;
-
+    if (jxExplicitbinding in ASettings) and not LExplicit then Continue;
     {$IFNDEF JSX_NOVAR}
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
     begin
@@ -847,7 +851,6 @@ begin
       continue
     end else
     {$ENDIF}
-
     if LRTTIField.FieldType.TypeKind in [tkRecord] then
     begin
       if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
