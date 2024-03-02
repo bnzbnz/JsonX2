@@ -40,13 +40,20 @@ uses
 type
 
   TJX2Setting = (
-    jxExplicitBinding         // Serialize/Deserialize only fields having an explicit JX2AttrName attribut
-    , jxoRaiseException
+    jxExplicitBinding           // Serialize/Deserialize only fields having an explicit JX2AttrName attribut
+    , jxoRaiseException         // Re-raise exception instead of an empty result;
     , jxoUnassignedToNull
-    , jxoReturnEmptyJsonString
+    , jxoReturnEmptyJsonString  // Serialize: return an empty string instead of '{}' when the object is empty
   );
   TJX2Settings = set of TJX2Setting;
 
+  IJX2 = Interface;
+
+  TJX2Converter = class
+    function ToJson(ASelfObj: TObject): string; virtual; abstract;
+    function FromJson(AJson: string) : TObject; virtual; abstract;
+    function Clone(ASelfObj: TObject): TObject; virtual; abstract;
+  end;
 
 {$REGION 'Attributes'}
 
@@ -62,6 +69,12 @@ type
   public
     FName: string;
     constructor Create(const AName: string);
+  end;
+
+  JX2AttrConv = class(TCustomAttribute)
+  public
+    FConv: TClass;
+    constructor Create(AConv: TClass);
   end;
 
 {$ENDREGION}
@@ -274,6 +287,7 @@ uses
   W3DJsonX2.RTTI
   , SysUtils
   , System.TypInfo
+  , W3DJsonX2
 {$IFNDEF JSX_NOVAR}
   , Variants
 {$ENDIF}
@@ -283,15 +297,21 @@ uses
 
 constructor JX2AttrClass.Create(const AClass: TClass; const AData1: TClass = Nil ; const AData2: TClass = Nil);
 begin
-   FClass := AClass;
-   FData1 := AData1;
-   FData2 := AData2;
+  FClass := AClass;
+  FData1 := AData1;
+  FData2 := AData2;
 end;
 
 constructor JX2AttrName.Create(const AName: string);
 begin
-   FName := AName;
+  FName := AName;
 end;
+
+constructor JX2AttrConv.Create(AConv: TClass);
+begin
+  FConv := AConv;
+end;
+
 
 {$ENDREGION}
 
@@ -334,7 +354,7 @@ var
   Field: TRttiField;
   LValue: TValue;
   LDestObj, LFieldObj: TObject;
-  LObjIntf, LFieldIntf: IJX2;
+  LObjIntf: IJX2;
 begin
   if ADestIntf = nil then exit;
   LDestObj := ADestIntf as TObject;
@@ -879,13 +899,13 @@ procedure TJX2.CloneTo(ADest: TJX2);
 var
   LField: TRTTIField;
   LV: TValue;
-  LClonable: IJX2;
   LInstance: TRTTIInstanceType;
   LObj: TObject;
   LIntf: IJX2;
   LTValue: TValue;
-  LTJX2: TJX2;
   LTIJX2: TIJX2;
+  LAttrConv: TCustomAttribute;
+  LConverter: TJX2Converter;
 begin
   if ADest = nil then exit;
   for LField in GetFields(ADest) do
@@ -942,8 +962,17 @@ begin
         else
         if LInstance.MetaclassType = TJX2StrObjDic then
           LField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
-        else
+        else begin
+          LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
+          if Assigned(LAttrConv) then
+          begin
+            LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
+            LField.SetValue(ADest, LConverter.Clone(LObj));
+            LConverter.Free;
+            Continue;
+          end;
           LField.SetValue(ADest, TJX2(LObj).Clone);
+        end;
       end;
     end else
     if LField.FieldType.TypeKind in [tkInterface] then
