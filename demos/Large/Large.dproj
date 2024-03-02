@@ -178,6 +178,7 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Large" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Large" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="Win32\Debug\Large.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">

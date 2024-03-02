@@ -22,7 +22,11 @@ uses
 
 type
 
-  TJSX2ScannerCallback = reference to procedure;
+  TStringListConv = class(TJX2Converter)
+    function ToJson(ASelfObj: TObject): string;  override;
+    function FromJson(AJson: string) : TObject; override;
+    function Clone(ASelfObj: TObject): TObject; override;
+  end;
 
   TForm2 = class(TForm)
     Button1: TButton;
@@ -71,6 +75,8 @@ type
   // A complex object definitionr
   TComplexObj = class(TJX2)                                                     // inherit from TJX2)
   public
+    [JX2AttrConv(TStringListConv)]
+    A: TStringList;
 
     // The fields order does not matter
 
@@ -79,7 +85,8 @@ type
     valInteger: TValue;                                                         // Integer
     {$IFNDEF JSX_NOVAR}
     valVariantString: Variant;                                                  // variant: string;
-    valBoolean: Variant;                                                        // Boolean
+    valBoolean: Variant;
+    [JX2AttrExclude]                                                        // Boolean
     valDouble: Variant;                                                         // Double
     valDateTime: variant;                                                       // DateTime in fact Double
     valUTCDateTime: variant;                                                    // DateTime ISO 8601 UTC, standard
@@ -126,6 +133,11 @@ type
     IStrValueDic: IJX2StrValueDic;
     [JX2AttrClass(TIJX2StrObjDic, TSimpleObject)]                               // Define the objext type and containned objects of the following Interfaced dictionnary :
     IStrObjDic: IJX2StrObjDic;
+
+    //Generic Object CallBack Converter
+    [JX2AttrConv(TStringListConv)]
+    TSL: TStringList;
+
   end;
 
 var
@@ -139,19 +151,9 @@ uses DateUtils;
 procedure TForm2.Button1Click(Sender: TObject);
 var
   Json, JsonBeauty: string;
-  Obj, CloneObj, ReadObj: TComplexObj;
+  Obj, CloneObj:  TComplexObj;
   Simple: TSimpleObject;
-
-  s: string;
-  d: TDateTime;
-  v: variant;
-  w: TObject;
-  y: TPair<Variant,Variant>;
-  z: TPair<Variant,TObject>;
-  val: TValue;
-
   FS:  TFileStream;
-
 begin
 
   Memo1.Lines.Clear;
@@ -278,23 +280,35 @@ begin
   TIJX2StrObjDic(Obj.IStrObjDiC).Add('SimpleX', Simple);
   TIJX2(TIJX2StrObjDic(Obj.IStrObjDiC).Clone).Free;
 
+  Obj.TSL := TStringList.Create;
+  Obj.TSL.Add('TSL value 1');
+  Obj.TSL.Add('TSL value 2');
+  Obj.Clone.Free;
+
+
+
 //----------------------------------------------------------------------------//
 
+
   // Obj Serialization
-  Json := W3DJSX2.Serialize(Obj, [jxoReturnEmptyObject]);
-  Memo1.Lines.Add( 'Object:');
+  Json := W3DJSX2.Serialize(Obj, []);
+  Memo1.Lines.Add( 'Object (create file Beauty.json):');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
+  FS := TFileStream.Create('Beauty.json', fmCreate);
+  FS.WriteRawUTF8String(UTF8String(Json));
+  FS.Free;
+
   // Cloning through serialization
-  CloneObj := W3DJSX2.Deserialize<TComplexObj>(Json);
-  Json := W3DJSX2.Serialize(CloneObj);
+  CloneObj := W3DJSX2.Deserialize<TComplexObj>(Json, []);
+  Json := W3DJSX2.Serialize(CloneObj, []);
   Memo1.Lines.Add( 'Cloned Object (Json Des/Ser):');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
-  Memo1.Lines.Add( 'Natively Cloned Object:');
+  Memo1.Lines.Add( 'Natively Cloned Object (will not clone converted elements):');
   Json := W3DJSX2.Serialize(CloneObj);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
@@ -303,11 +317,11 @@ begin
   Memo2.Lines.Add('Json Beautifier :');
   Memo2.Lines.Add(JsonBeauty);
 
-  FS := TFileStream.Create('Beauty.json', fmCreate);
-  FS.WriteRawUTF8String(UTF8String(JsonBeauty));
-  FS.Free;
+
 
 //----------------------------------------------------------------------------//
+
+  Memo3.Lines.Add('Read few values from Object:');
 
   Memo3.Lines.Add('String (TValue): ' + Obj.valString.AsString);
   {$IFNDEF JSX_NOVAR}
@@ -358,11 +372,43 @@ begin
   Json := W3DJSX2.Serialize(Obj);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   Memo4.Lines.Add( JsonBeautifier(Json) );
+
   Obj.Free;
 
 end;
 
 procedure TSimpleObject.SetVar1(v: TValue); begin Fvar1 := v; end;
 function TSimpleObject.GetVar1: TValue; begin Result := Fvar1; end;
+
+function TStringListConv.Clone(ASelfObj: TObject): TObject;
+begin
+  Result := TStringList.Create;
+  for var LStr in TStringList(ASelfObj) do
+    TStringList(Result).Add(LStr);
+end;
+
+function TStringListConv.FromJson(AJson: string): TObject;
+var
+  LIds: TJSONArray;
+  LIdx: string;
+begin
+  Result := TStringList.Create;
+  LIds := TJSONObject.Parse(AJson) as TJSONArray;
+  for LIdx in LIds do
+    TStringList(Result).Add(LIdx);
+  LIds.Free;
+end;
+
+function TStringListConv.ToJson(ASelfObj: TObject): string;
+var
+  LStr: string;
+  LArr: TJSONArray;
+begin
+  LArr := (TJSONArray).Create;
+  for LStr in TStringList(ASelfObj) do LArr.Add(LStr);
+  Result := LArr.ToJSON();
+  LArr.Free;
+end;
+
 end.
 

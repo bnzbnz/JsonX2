@@ -159,11 +159,9 @@ initialization
   _RTTIAttrsCacheDic := TDictionary<TRTTIField, TArray<TCustomAttribute>>.Create;
   _RTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
   for _Cleaner :=0 to 65535 do _JRTTICache[_Cleaner] := Nil;
-  _FielddLock := TCriticalSection.Create;
 {$ENDIF}
 finalization
 {$IFNDEF JSX_NOCACHE}
-  _FielddLock.Free;
   _RTTIInstCacheDic.Free;
   _RTTIAttrsCacheDic.Free;
   _RTTIPropsCacheDic.Free;

@@ -109,7 +109,7 @@ begin
     SW.Stop;
     Memo1.Lines.Add('Read in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;
-    Obj := W3DJSX2.Deserialize<TfetchItemAspectsContentType>(Json);
+    Obj := W3DJSX2.Deserialize<TfetchItemAspectsContentType>(Json, []);
     Sw.Stop;
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;

@@ -77,6 +77,10 @@ type
     constructor Create(AConv: TClass);
   end;
 
+  JX2AttrExclude = class(TCustomAttribute)
+  public
+  end;
+
 {$ENDREGION}
 
 {$REGION 'Interfaces'}

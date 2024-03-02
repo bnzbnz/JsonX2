@@ -382,6 +382,8 @@ begin
     LJsonName := LField.Name;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
+    LAttr := GetFieldAttribute(LField, JX2AttrExclude);
+    if Assigned(LAttr) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
