@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, System.TypInfo,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Memo.Types,
-  FMX.ScrollBox, FMX.Memo
+  FMX.ScrollBox, FMX.Memo, FMX.Layouts, Activex
   {$IFNDEF JSX_NOVAR}
   , System.Variants
   {$ENDIF}
@@ -17,12 +17,17 @@ uses
   , W3DJsonX2.RTTI
   , W3DJsonX2.Types
   , W3DJsonX2.Utils
-  , W3DCloneable, FMX.Layouts
+  , W3DCloneable
   ;
 
 type
 
   TStringListConv = class(TJX2Converter)
+    function ToJson(ASelfObj: TObject): string;  override;
+    function FromJson(AJson: string) : TObject; override;
+    function Clone(ASelfObj: TObject): TObject; override;
+  end;
+  TIIntfListConv = class(TJX2Converter)
     function ToJson(ASelfObj: TObject): string;  override;
     function FromJson(AJson: string) : TObject; override;
     function Clone(ASelfObj: TObject): TObject; override;
@@ -47,6 +52,13 @@ type
 //----------------------------------------------------------------------------//
 // Json Objectx Definition :
 
+ IGenericInterface = interface
+  ['{70DE2C9D-81FD-4524-B886-C48D71A6BEE0}']
+ end;
+
+  TGenericInterfacedObject = class(TInterfacedObject, IGenericInterface)
+    var AValue: Integer;
+ end;
 
   // A really simple container
  TSimpleSubObject = Class(TJX2)
@@ -59,7 +71,7 @@ type
 
   // a simple object with property and sub. object
   // ALL OBJECTS AND INTERFACED OBJECTS ARE OWNED
-  // It means that you don't have to take care of their destruvtion (freeing)
+  // It means that you don't have to take care of their destruction (freeing)
   TSimpleObject = class(TIJX2, ISimpleObject)                                   // TSimple Object, must inherit from TIJX2 if interfaced
   private
     [JX2AttrName('var1')]                                                       // Fvar1 field name will be mapped as json "var" name
@@ -75,8 +87,6 @@ type
   // A complex object definitionr
   TComplexObj = class(TJX2)                                                     // inherit from TJX2)
   public
-    [JX2AttrConv(TStringListConv)]
-    A: TStringList;
 
     // The fields order does not matter
 
@@ -134,7 +144,12 @@ type
     [JX2AttrClass(TIJX2StrObjDic, TSimpleObject)]                               // Define the objext type and containned objects of the following Interfaced dictionnary :
     IStrObjDic: IJX2StrObjDic;
 
-    //Generic Object CallBack Converter
+
+    [JX2AttrName('ConvertedIntf')]
+    [JX2AttrConv(TIIntfListConv)]
+    IIntf: IGenericInterface;
+
+    //Generic Object/Inteface CallBack Converter
     [JX2AttrConv(TStringListConv)]
     TSL: TStringList;
 
@@ -159,10 +174,11 @@ begin
   Memo1.Lines.Clear;
   Memo2.Lines.Clear;
   Memo3.Lines.Clear;
+  Memo4.Lines.Clear;
 
 //----------------------------------------------------------------------------//
 
-  // Create a Json Object, fill the object
+  // Create the main Json Object
   Obj := TComplexObj.Create;
 
   //Primitives
@@ -283,8 +299,8 @@ begin
   Obj.TSL := TStringList.Create;
   Obj.TSL.Add('TSL value 1');
   Obj.TSL.Add('TSL value 2');
-  Obj.Clone.Free;
 
+  Obj.IIntf := TGenericInterfacedObject.Create;
 
 
 //----------------------------------------------------------------------------//
@@ -308,7 +324,7 @@ begin
 
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
-  Memo1.Lines.Add( 'Natively Cloned Object (will not clone converted elements):');
+  Memo1.Lines.Add( 'Natively Cloned Object :');
   Json := W3DJSX2.Serialize(CloneObj);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
@@ -328,6 +344,7 @@ begin
   Memo3.Lines.Add('String (Variant): ' + Obj.valVariantString);
   Memo3.Lines.Add('Double: ' + FloatToStr(Obj.valDouble));
   {$ENDIF}
+  Memo3.Lines.Add('UTC: ' + Obj.valUTCDateTime);
 
   Memo3.Lines.Add('ObjectType.var1: ' + Obj.ObjectType.Var1.ToString);
   Memo3.Lines.Add('IntfType.var1: ' + TSimpleObject(Obj.IntfType).Var1.ToString());
@@ -408,6 +425,24 @@ begin
   for LStr in TStringList(ASelfObj) do LArr.Add(LStr);
   Result := LArr.ToJSON();
   LArr.Free;
+end;
+
+{ TIIntfListConv }
+
+function TIIntfListConv.Clone(ASelfObj: TObject): TObject;
+begin
+  Result := TGenericInterfacedObject.Create;
+  TGenericInterfacedObject(Result).AValue :=  TGenericInterfacedObject(ASelfObj).AValue;
+end;
+
+function TIIntfListConv.FromJson(AJson: string): TObject;
+begin
+  Result := TGenericInterfacedObject.Create;
+end;
+
+function TIIntfListConv.ToJson(ASelfObj: TObject): string;
+begin
+  Result := '"XXXXXX I DONT CARE... XXXXXXX"';
 end;
 
 end.
