@@ -924,13 +924,8 @@ begin
     if LField.FieldType.TypeKind = tkRecord then
     begin
       if LField.GetValue(Self).TryAsType<TValue>(LTValue) then
-      begin
         if LField.FieldType.Handle = TypeInfo(TValue) then
-        Continue;
-        begin
           LField.SetValue(ADest, LTValue);
-        end;
-      end;
     end;
     if LField.FieldType.TypeKind in [tkClass] then
     begin
