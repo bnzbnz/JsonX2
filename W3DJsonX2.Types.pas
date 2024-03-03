@@ -416,7 +416,7 @@ begin
             Field.SetValue(LDestObj, LValue);
           end else
           {$ENDIF}
-          begin
+           begin
             LNewObj := LFieldObj.ClassType.Create;
             if not Supports(LNewObj, IJX2, LObjIntf) then continue;
             TIJX2(LFieldObj).CloneTo(LObjIntf);
@@ -926,6 +926,7 @@ begin
       if LField.GetValue(Self).TryAsType<TValue>(LTValue) then
       begin
         if LField.FieldType.Handle = TypeInfo(TValue) then
+        Continue;
         begin
           LField.SetValue(ADest, LTValue);
         end;
@@ -970,9 +971,15 @@ begin
           LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
           if Assigned(LAttrConv) then
           begin
-            LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
-            LField.SetValue(ADest, LConverter.Clone(LObj));
-            LConverter.Free;
+            LConverter := nil;
+            try
+              try
+                LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
+                LField.SetValue(ADest, LConverter.Clone(LObj));
+              except end;
+            finally
+              LConverter.Free;
+            end;
             Continue;
           end;
           LField.SetValue(ADest, TJX2(LObj).Clone);
@@ -981,8 +988,26 @@ begin
     end else
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
-      var x := LField.Name;
-      LIntf := LField.GetValue(Self).AsInterface as IJX2;
+      if not Supports(LField.GetValue(Self).AsInterface, IJX2, LIntf) then
+      begin
+        LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
+        if Assigned(LAttrConv) then
+        begin
+          LConverter := nil;
+          try
+            try
+              LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
+              if not Supports(LField.GetValue(Self).AsInterface, IInterface, LIntf) then Continue;
+              LObj  := LIntf as TObject;
+              LField.SetValue(ADest, LConverter.Clone( LObj ));
+            except end; // Sillent
+          finally
+            LConverter.Free;
+          end;
+        end;
+        Continue;
+      end;
+
       LObj  := LIntf as TObject;
 
       {$IFNDEF JSX_NOVAR}

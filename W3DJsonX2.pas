@@ -382,8 +382,7 @@ begin
     LJsonName := LField.Name;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
-    LAttr := GetFieldAttribute(LField, JX2AttrExclude);
-    if Assigned(LAttr) then Continue;
+    if Assigned( GetFieldAttribute(LField, JX2AttrExclude) ) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
@@ -470,7 +469,6 @@ begin
       end;
       Continue;
     end else
-
 
     if LField.FieldType.TypeKind in [tkClass] then
     begin
@@ -598,21 +596,21 @@ begin
       end else
 
       begin
+
         LAttr := GetFieldAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
+          LAttrConv := nil;
           try
-            LAttrConv := nil;
             try
               LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
               LJsonStr := LAttrConv.ToJson(LCurObj);
               AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
-              Continue;
-            finally
-              LAttrConv.Free;
-            end;
-          except
+            except end;
+          finally
+            LAttrConv.Free;
           end;
+          Continue;
         end;
 
         LJsonObj := TJsonObject(W3DJsonX2.Obj.TJsonObject.NewInstance);
@@ -626,9 +624,26 @@ begin
     end else
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
-
-      LCurIntf := LField.GetValue(AObj).AsInterface as IJX2;
-      if LCurIntf = Nil then begin SetToNull(LJsonName, ASettings); Continue; end;
+      if LField.GetValue(AObj).AsInterface = Nil then begin SetToNull(LJsonName, ASettings); Continue; end;
+      if not Supports(LField.GetValue(AObj).AsInterface, IJX2, LCurIntf) then
+      begin
+        LAttr := GetFieldAttribute(LField, JX2AttrConv);
+        if Assigned(LAttr) then
+        begin
+          LAttrConv := nil;
+          try
+            try
+              LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
+              LJsonStr := LAttrConv.ToJson(LCurObj);
+              AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
+            except end;
+          finally
+            LAttrConv.Free;
+          end;
+          Continue;
+        end else
+        	begin SetToNull(LJsonName, ASettings); Continue; end;
+      end;
       LTypedObj  := LCurIntf as TObject;
 
       if Supports(LTypedObj, IJX2ValueList) then
@@ -639,6 +654,7 @@ begin
         for LValueLoopClass in LValueListObj do LSL.Add(ValueToJSONValue(LValueLoopClass));
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
+		Continue;
       end else
 
 {$IFNDEF JSX_NOVAR}
@@ -650,6 +666,7 @@ begin
         for LVarLoop in  TIJX2VarList(LVarListIntf) do LSL.Add(VariantToJSONValue(LVarLoop));
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
+		Continue;
       end else
 {$ENDIF}
       if Supports(LTypedObj, IJX2ObjList) then
@@ -667,6 +684,7 @@ begin
         LJsonObj.Free;
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('[' + LSL.DelimitedText + ']');
         LSL.Free;
+		Continue;
       end else
 
 {$IFNDEF JSX_NOVAR}
@@ -679,6 +697,7 @@ begin
           LSL.Add(StrToJSONValue(LStrVarDic.Key) + ':' + VariantToJSONValue(LStrVarDic.Value));
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
+		Continue;
       end else
 {$ENDIF}
 
@@ -691,6 +710,7 @@ begin
           LSL.Add(StrToJSONValue(LStrValue.Key) + ':' + ValueToJSONValue(LStrValue.Value));
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
+		Continue;
       end else
 
       if Supports(LTypedObj, IJX2StrObjDic) then
@@ -708,6 +728,7 @@ begin
         LJsonObj.Free;
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LSL.Free;
+		Continue;
       end else
 
       if Supports(LTypedObj, IJX2ValueObjDic) then
@@ -725,6 +746,7 @@ begin
         LJsonObj.Free;
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LSL.Free;
+		Continue;
       end else
 
 {$IFNDEF JSX_NOVAR}
@@ -743,6 +765,7 @@ begin
         LJsonObj.Free;
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LSL.Free;
+		Continue;
       end else
 {$ENDIF}
 
@@ -755,7 +778,6 @@ begin
        end
 
        else SetToNull(LJsonName, ASettings);
-      Continue;
 
     end;
   end; // for LField in LFields do
@@ -814,7 +836,6 @@ var
   LJName: string;
   LRTTIField: TRTTIField;
   LInstance: TRTTIInstanceType;
-  LAttr: TCustomAttribute;
   LNewObj: TObject;
   LNewStrObj: TJX2StrObjDic;
   LNewValueObj: TJX2ValueObjDic;
@@ -830,6 +851,7 @@ var
   LINewStrObjDic: TIJX2StrObjDic;
   LTValue: TValue;
   LExplicit: Boolean;
+  LAttr: TCustomAttribute;
   LAttrConv: TJX2Converter;
 
   function GetFieldName(AJsonName: string; var AExplicit: Boolean): TRTTIField;
@@ -1063,6 +1085,7 @@ begin
         Continue;
       end else
       {$ENDIF}
+
       begin
         if LJValue.isNull then
         begin
@@ -1094,8 +1117,7 @@ begin
             finally
               LAttrConv.Free;
             end;
-          except
-          end;
+          except end; //Silent
           Continue;
         end;
 
@@ -1104,11 +1126,38 @@ begin
         LRTTIField.SetValue(AObj, LNewObj);
         Continue
       end;
-
     end;
 
     if LRTTIField.FieldType.TypeKind in [tkInterface] then
     begin
+
+      LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
+      if Assigned(LAttr) then
+      begin
+       LAttrConv := nil;
+        try
+          try
+            LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
+            case LJValue.Typ of
+              jdtNone: LNewObj := nil ;
+              jdtString: LNewObj := LAttrConv.FromJson(LJValue.Value);
+              jdtInt: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
+              jdtLong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
+              jdtULong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
+              jdtFloat: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
+              jdtDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
+              jdtUtcDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
+              jdtBool: LNewObj := LAttrConv.FromJson(LowerCase(BoolToStr(LJValue.BoolValue)));
+              jdtArray: LNewObj := LAttrConv.FromJson(LJValue.ArrayValue.ToJSON);
+              jdtObject: LNewObj := LAttrConv.FromJson(LJValue.ObjectValue.ToJSON);
+            end;
+            LRTTIField.SetValue(AObj, LNewObj);
+          finally
+            LAttrConv.Free;
+          end;
+        except end; //Silent
+        Continue;
+      end;
 
       LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
       if LAttr = Nil then
