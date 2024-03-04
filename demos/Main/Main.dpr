@@ -9,7 +9,9 @@ uses
   W3DJsonX2.Types in '..\..\W3DJsonX2.Types.pas',
   W3DJsonX2.Utils in '..\..\W3DJsonX2.Utils.pas',
   W3DCloneable in '..\..\W3DCloneable.pas',
-  uMain in 'uMain.pas' {Form2};
+  uMain in 'uMain.pas' {Form2},
+  W3DJsonX2.Tools in '..\..\W3DJsonX2.Tools.pas',
+  W3DJsonX2.Conv in '..\..\W3DJsonX2.Conv.pas';
 
 {$R *.res}
 

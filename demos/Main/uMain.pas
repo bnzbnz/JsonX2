@@ -16,22 +16,13 @@ uses
   , W3DJsonX2
   , W3DJsonX2.RTTI
   , W3DJsonX2.Types
+  , W3DJsonX2.Conv
+  , W3DJsonX2.Tools
   , W3DJsonX2.Utils
   , W3DCloneable
   ;
 
 type
-
-  TStringListConv = class(TJX2Converter)
-    function ToJson(ASelfObj: TObject): string;  override;
-    function FromJson(AJson: string) : TObject; override;
-    function Clone(ASelfObj: TObject): TObject; override;
-  end;
-  TIIntfListConv = class(TJX2Converter)
-    function ToJson(ASelfObj: TObject): string;  override;
-    function FromJson(AJson: string) : TObject; override;
-    function Clone(ASelfObj: TObject): TObject; override;
-  end;
 
   TForm2 = class(TForm)
     Button1: TButton;
@@ -61,7 +52,7 @@ type
  end;
 
   // A really simple container
- TSimpleSubObject = Class(TJX2)
+  TSimpleSubObject = Class(TJX2)
     var3: TValue;
     var4: TValue;
   end;
@@ -144,14 +135,13 @@ type
     [JX2AttrClass(TIJX2StrObjDic, TSimpleObject)]                               // Define the objext type and containned objects of the following Interfaced dictionnary :
     IStrObjDic: IJX2StrObjDic;
 
-
-    [JX2AttrName('ConvertedIntf')]
-    [JX2AttrConv(TIIntfListConv)]
-    IIntf: IGenericInterface;
-
     //Generic Object/Inteface CallBack Converter
     [JX2AttrConv(TStringListConv)]
     TSL: TStringList;
+
+    [JX2AttrConv(TStrValueDicConv)]
+    TEST: TDictionary<string, TValue>
+
 
   end;
 
@@ -203,8 +193,6 @@ begin
   Obj.ObjectType.Obj := TSimpleSubObject.Create;
   Obj.ObjectType.Obj.var3 := '3';
   Obj.ObjectType.Obj.var4 := '4';
-  TJX2(Obj.ObjectType.Clone).Free;
-
 
   Obj.IntfType := TSimpleObject( Obj.ObjectType.Clone);     // Use cloning for copying previous object, Inteface
   TSimpleObject(Obj.IntfType).var1 := 'a var 5 Intf';       // Set values :
@@ -215,7 +203,6 @@ begin
   Obj.IntfType := TSimpleObject.Create;
   TSimpleObject(Obj.IntfType).var1 := 'a var 3 Intf';
   TSimpleObject(Obj.IntfType).var2 := 'a var 4 Intf';
-  TJX2(Obj.IntfType.Clone).Free;
                                                              // Testing Object Clone
   // Lists (arrays) of Var/Value/Obj
 
@@ -225,26 +212,23 @@ begin
   {$ENDIF}
   Obj.VaLlist := TJX2ValueList.Create;
   Obj.VaLlist.Add(3);   Obj.VaLlist.Add(4);
-  Obj.VaLlist.Clone.Free;
 
   Obj.ObjList := TJX2ObjList.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 5;
   Simple.var2 := 'five';
   TJX2ObjList(Obj.ObjList).Add(Simple);
-  Obj.ObjList.Clone.Free;
 
   {$IFNDEF JSX_NOVAR}
   Obj.IVaRList := TIJX2VarList.Create;
   TIJX2VaRList(Obj.IVaRList).Add('6A');
   TIJX2VaRList(Obj.IVaRList).Add('7B');
-  TIJX2(TIJX2VaRList(Obj.IVaRList).Clone).Free;
   {$ENDIF}
 
   Obj.IVaLList := TIJX2ValueList.Create;
   TIJX2ValueList(Obj.IVaLList).Add('8C');
   TIJX2ValueList(Obj.IVaLList).Add('9D');
-  TIJX2(TIJX2ValueList(Obj.IVaLList).Clone).Free;
+
 
   Obj.IObjList := TIJX2ObjList.Create;
   Simple := TSimpleObject.Create;
@@ -255,53 +239,49 @@ begin
   Simple.var1 := 20;
   Simple.var2 := 'twenny';
   TIJX2ObjList(Obj.IObjList).Add(Simple);
-  TIJX2(TIJX2ObjList(Obj.IObjList).Clone).Free;
 
   // Dictionnaries Var/Values/Object
   {$IFNDEF JSX_NOVAR}
   Obj.StrVarDic := TJX2StrVarDic.Create;
   Obj.StrVarDic.Add('1','A');
   Obj.StrVarDic.Add('2', 12);
-  Obj.StrVarDic.Clone.Free;
+
   {$ENDIF}
 
   Obj.StrValueDic := TJX2StrValueDic.Create;
   Obj.StrValueDic.Add('1', 7);
   Obj.StrValueDic.Add('2', 13);
-  Obj.StrValueDic.Clone.Free;
+
 
   Obj.StrObjDic := TJX2StrObjDic.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 'ValueKey';
   Simple.var2 := 'ObjValue ''V2/''/ escaped';
   Obj.StrObjDic.Add('Key1', Simple);
-  Obj.StrObjDic.Clone.Free;
 
   {$IFNDEF JSX_NOVAR}
   Obj.IStrVarDic := TIJX2StrVarDic.Create;
   TIJX2StrVarDic(Obj.IStrVarDic).Add('3','B');
   TIJX2StrVarDic(Obj.IStrVarDic).Add('4', 13);
-  TIJX2(TIJX2StrVarDic(Obj.IStrVarDic).Clone).Free;
   {$ENDIF}
 
   Obj.IStrValueDic := TIJX2StrValueDic.Create;
   TIJX2StrValueDic(Obj.IStrValueDic).Add('3','D');
   TIJX2StrValueDic(Obj.IStrValueDic).Add('4', 14);
-  TIJX2(TIJX2StrValueDic(Obj.IStrValueDic).Clone).Free;
 
   Obj.IStrObjDiC := TIJX2StrObjDic.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 'V1';
   Simple.var2 := 'V2';
-  TIJX2StrObjDic(Obj.IStrObjDiC).Add('SimpleX', Simple);
-  TIJX2(TIJX2StrObjDic(Obj.IStrObjDiC).Clone).Free;
+  TIJX2StrObjDic(Obj.IStrObjDic).Add('1', Simple);
 
   Obj.TSL := TStringList.Create;
   Obj.TSL.Add('TSL value 1');
   Obj.TSL.Add('TSL value 2');
 
-  Obj.IIntf := TGenericInterfacedObject.Create;
-
+  Obj.TEST := TDictionary<string, TValue>.Create;
+  Obj.TEST.Add('test', 11);
+  Obj.TEST.Add('testX', 12);
 
 //----------------------------------------------------------------------------//
 
@@ -397,53 +377,6 @@ end;
 procedure TSimpleObject.SetVar1(v: TValue); begin Fvar1 := v; end;
 function TSimpleObject.GetVar1: TValue; begin Result := Fvar1; end;
 
-function TStringListConv.Clone(ASelfObj: TObject): TObject;
-begin
-  Result := TStringList.Create;
-  for var LStr in TStringList(ASelfObj) do
-    TStringList(Result).Add(LStr);
-end;
-
-function TStringListConv.FromJson(AJson: string): TObject;
-var
-  LIds: TJSONArray;
-  LIdx: string;
-begin
-  Result := TStringList.Create;
-  LIds := TJSONObject.Parse(AJson) as TJSONArray;
-  for LIdx in LIds do
-    TStringList(Result).Add(LIdx);
-  LIds.Free;
-end;
-
-function TStringListConv.ToJson(ASelfObj: TObject): string;
-var
-  LStr: string;
-  LArr: TJSONArray;
-begin
-  LArr := (TJSONArray).Create;
-  for LStr in TStringList(ASelfObj) do LArr.Add(LStr);
-  Result := LArr.ToJSON();
-  LArr.Free;
-end;
-
-{ TIIntfListConv }
-
-function TIIntfListConv.Clone(ASelfObj: TObject): TObject;
-begin
-  Result := TGenericInterfacedObject.Create;
-  TGenericInterfacedObject(Result).AValue :=  TGenericInterfacedObject(ASelfObj).AValue;
-end;
-
-function TIIntfListConv.FromJson(AJson: string): TObject;
-begin
-  Result := TGenericInterfacedObject.Create;
-end;
-
-function TIIntfListConv.ToJson(ASelfObj: TObject): string;
-begin
-  Result := '"XXXXXX I DONT CARE... XXXXXXX"';
-end;
 
 end.
 

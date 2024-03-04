@@ -35,6 +35,7 @@ uses
   , System.Generics.Collections
   , RTTI
   , W3DCloneable
+  , W3DJsonX2.Obj
   ;
 
 type
@@ -51,7 +52,7 @@ type
 
   TJX2Converter = class
     function ToJson(ASelfObj: TObject): string; virtual; abstract;
-    function FromJson(AJson: string) : TObject; virtual; abstract;
+    function FromJson(JsonObject: PJsonDataValue) : TObject; virtual; abstract;
     function Clone(ASelfObj: TObject): TObject; virtual; abstract;
   end;
 
@@ -983,6 +984,7 @@ begin
     end else
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
+      if LField.GetValue(Self).IsEmpty then Continue;
       if not Supports(LField.GetValue(Self).AsInterface, IJX2, LIntf) then
       begin
         LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
