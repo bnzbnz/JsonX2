@@ -423,6 +423,9 @@ begin
         if LObj is TJX2 then
           AField.SetValue(ADest, TJX2(LObj).Clone)
         else
+        if LObj is TIJX2 then
+          AField.SetValue(ADest, TJX2(LObj).Clone)
+        else
           AField.SetValue(ADest, nil);
       end;
     end;
