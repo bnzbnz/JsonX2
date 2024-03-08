@@ -36,53 +36,37 @@ uses
     , System.TypInfo
     , W3DJsonX2.Obj
     , W3DJsonX2.Types
+    , W3DJsonX2.Conv
+    , W3DJsonX2.Patch
     ;
+
+const
+  BStrL: array[Boolean] of string = ('false','true');
+  BStrK: array[Boolean] of string = ('False','True');
+  BStrU: array[Boolean] of string = ('FALSE','TRUE');
 
 type
 
   // JsonX2Patcher
 
-  TJsonXPatcher = class(TObject)
-  private type
-    TJsonXPatcherCtnr = class
-    public
-      PHdr, PJsn: string;
-    end;
-  private
-    FParts: TObjectList<TJsonXPatcherCtnr>;
-    FLowMemL2: Boolean;
-  public
-    constructor Create; overload;
-    destructor Destroy; override;
-    procedure Decode(var AJsonStr: string);
-    function Encode(AJsonStr: string; AHeader: string = '"';  AFooter: string = '"'): string;
-  end;
-
   TJsonX2 = class(TObject)
-  private
-    class var FInstance: TJsonX2;
-    procedure InternalSerialize(
-                AObj: TObject;
-                AJsonObj: TJsonObject;
-                AJsonPatcher: TJsonXPatcher;
-                ASettings: TJX2Settings
-              );
-    procedure InternalDeserialize(
-                AObj: TObject;
-                AJsonObj: TJsonObject;
-                ASettings: TJX2Settings
-              );
   public
+    class var FInstance: TJsonX2;
     constructor Create; overload;
     destructor Destroy; override;
-    function Serialize(Obj: TObject; ASettings: TJX2Settings = []): string; overload;
-    function Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string; overload;
-    function Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []): T; overload;
-    function Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
+
+    function  Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
+
+    procedure Serialize(AObj: TObject; AJsonObj: TJsonObject; AJsonPatcher: TJX2Patcher; ASettings: TJX2Settings); overload;
+    function  Serialize(Obj: TObject; ASettings: TJX2Settings = []): string; overload;
+    function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string; overload;
+    procedure Deserialize(AObj: TObject; AJsonObj: TJsonObject; ASettings: TJX2Settings); overload;
+    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []): T; overload;
+    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
   end;
 
 var
-  W3DJSX2 : TJsonX2;
+  W3DJX2 : TJsonX2;
 
 implementation
 uses
@@ -94,62 +78,8 @@ uses
   , SyncObjs
   , SysUtils
   , W3DJsonX2.Utils
-  , W3DJsonX2.Tools
   , W3DJsonX2.RTTI
    ;
-
-{$REGION 'TJsonXPatcher'}
-
-constructor TJsonXPatcher.Create;
-begin
-  FParts := TObjectList<TJsonXPatcherCtnr>.Create(True);
-end;
-
-destructor TJsonXPatcher.Destroy;
-begin
-  FParts.Free;
-  inherited;
-end;
-
-procedure TJsonXPatcher.Decode(var AJsonStr: string);
-var
-  Idx, Position: Integer;
-begin
-  Position :=  LenStr(AJsonStr);
-  try
-    for Idx := FParts.count - 1 downto 0 do
-    begin
-      Position := OnceFastReplaceStr(AJsonStr, TJsonXPatcherCtnr(FParts[Idx]).PHdr, TJsonXPatcherCtnr(FParts[Idx]).PJsn, Position, True);
-      FParts.Delete(Idx);
-    end;
-  finally
-    FParts.Clear;
-  end
-end;
-
-function TJsonXPatcher.Encode(AJsonStr, AHeader, AFooter: string): string;
-var
-  Part: TJsonXPatcherCtnr;
-  Len: Int64;
-begin
-  Result  := StringGUID;
-  Part := TJsonXPatcherCtnr.Create;
-  if Self.FLowMemL2 then
-  begin
-    Part.PHdr := AHeader + Result + AFooter;
-    Part.PJsn := AJsonStr;
-  end else begin
-    Len := Length(AHeader) + Length(Result) + Length(AFooter) - Length(AJsonStr);
-    if Len > 0 then  AJsonStr := AJsonStr + StringOfChar(' ', Len)
-    else
-    if Len < 0 then  Result := Result + StringOfChar(' ', -Len);
-    Part.PHdr := AHeader + Result + AFooter;
-    Part.PJsn := AJsonStr;
-  end;
-  FParts.Add(Part);
-end;
-
-{$REGION}
 
 {$REGION 'TJsonX2'}
 
@@ -164,10 +94,10 @@ begin
   inherited;
 end;
 
-procedure  TJsonX2.InternalSerialize(
+procedure  TJsonX2.Serialize(
             AObj: TObject;
             AJsonObj: W3DJsonX2.Obj.TJsonObject;
-            AJsonPatcher: TJsonXPatcher;
+            AJsonPatcher: TJX2Patcher;
             ASettings: TJX2Settings
           );
 var
@@ -218,12 +148,15 @@ var
   LTValue: TValue;
   LDouble: Double;
   LErrorMsgType: string;
-  LAttrConv: TJX2Converter;
+  LAttrIntf: IJX2Converter;
+
 
   procedure SetToNull(LJsonName: string; ASettings: TJX2Settings);
   begin
+    (*
     if not (jxoUnassignedToNull in ASettings) then exit;
     if LJsonName.Trim.IsEmpty then exit;
+    *)
     AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
   end;
 
@@ -318,7 +251,7 @@ begin
           tkMRecord: LErrorMsgType := 'tkMRecord';
         end;
         if LErrorMsgType <> '' then
-          raise Exception.Create(Format('InternalSerialize TValue ( %s ) id %s !', [LJsonName, LErrorMsgType]));
+          raise Exception.Create(Format('Serialize TValue ( %s ) id %s !', [LJsonName, LErrorMsgType]));
 
       end;
       Continue;
@@ -360,7 +293,7 @@ begin
         for LObjLoopClass in LObjListClass do
         begin
           LJsonObj.Clear;
-          InternalSerialize(LObjLoopClass, LJsonObj, AJsonPatcher, ASettings);
+          Serialize(LObjLoopClass, LJsonObj, AJsonPatcher, ASettings);
           LSL.Add(LJsonObj.ToJSON(True));
         end;
         LJsonObj.Free;
@@ -403,7 +336,7 @@ begin
         for LValueObjLoopClass in LObjValueObjDic do
         begin
           LJsonObj.Clear;
-          InternalSerialize(LValueObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
+          Serialize(LValueObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
           LJsonStr := LJsonObj.ToJSON(True);
           LSL.Add(ValueToJSONValue(LValueObjLoopClass.Key, True)+ ':' + LJsonStr);
         end;
@@ -411,6 +344,7 @@ begin
         LJsonObj.Free;
         LSL.Free;
       end else
+
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarObjDic then
       begin
@@ -421,7 +355,7 @@ begin
         for LVarObjLoopClass in LObjVarObjDic do
         begin
           LJsonObj.Clear;
-          InternalSerialize(LVarObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
+          Serialize(LVarObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
           LJsonStr := LJsonObj.ToJSON(True);
           LSL.Add(VariantToJSONValue( LVarObjLoopClass.Key, True)+ ':' + LJsonStr);
         end;
@@ -440,7 +374,7 @@ begin
         for LStrObjLoopClass in LObjStrObjDic do
         begin
           LJsonObj.Clear;
-          InternalSerialize(LStrObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
+          Serialize(LStrObjLoopClass.Value, LJsonObj, AJsonPatcher, ASettings);
           LJsonStr := LJsonObj.ToJSON(True);
           LSL.Add(StrToJSONValue(LStrObjLoopClass.Key) + ':' + LJsonStr);
         end;
@@ -454,21 +388,17 @@ begin
         LAttr := GetFieldAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
-          LAttrConv := nil;
           try
-            try
-              LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
-              LJsonStr := LAttrConv.ToJson(LCurObj);
-              AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
-            except end;
-          finally
-            LAttrConv.Free;
-          end;
+           	if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
+            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
+            LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
+            AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
+          except end;
           Continue;
         end;
 
         LJsonObj := TJsonObject(W3DJsonX2.Obj.TJsonObject.NewInstance);
-        InternalSerialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
+        Serialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode( LJsonObj.ToJSON(True) );
         LJsonObj.Free;
       end;
@@ -484,16 +414,12 @@ begin
         LAttr := GetFieldAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
-          LAttrConv := nil;
           try
-            try
-              LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
-              LJsonStr := LAttrConv.ToJson(LCurObj);
-              AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
-            except end;
-          finally
-            LAttrConv.Free;
-          end;
+           	if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
+            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
+            LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj));
+            AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
+          except end;
           Continue;
         end else
         	begin SetToNull(LJsonName, ASettings); Continue; end;
@@ -532,7 +458,7 @@ begin
         for LObjLoop in LObjListObj do
         begin
           LJsonObj.Clear;
-          InternalSerialize(TObject(LObjLoop), LJsonObj, AJsonPatcher, ASettings);
+          Serialize(TObject(LObjLoop), LJsonObj, AJsonPatcher, ASettings);
           LSL.Add(LJsonObj.ToJSON(True));
         end;
         LJsonObj.Free;
@@ -576,7 +502,7 @@ begin
         for LStrObjPair in LStrObjDicIntf do
         begin
           LJsonObj.Clear;
-          InternalSerialize(TObject(LStrObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
+          Serialize(TObject(LStrObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
           LSL.Add(StrToJSONValue(LStrObjPair.Key) + ':' +  LJsonObj.ToJSON(True));
         end;
         LJsonObj.Free;
@@ -594,7 +520,7 @@ begin
         for LValObjPair in TIJX2ValueObjDic(LValObjDicIntf) do
         begin
           LJsonObj.Clear;
-          InternalSerialize(TObject(LValObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
+          Serialize(TObject(LValObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
           LSL.Add(ValueToJSONValue(LValObjPair.Key, True) + ':' +  LJsonObj.ToJSON(True));
         end;
         LJsonObj.Free;
@@ -613,7 +539,7 @@ begin
         for LVarObjPair in LVarObjDicObj do
         begin
           LJsonObj.Clear;
-          InternalSerialize(TObject(LVarObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
+          Serialize(TObject(LVarObjPair.Value), LJsonObj, AJsonPatcher, ASettings);
           LSL.Add(VariantToJSONValue(LVarObjPair.Key, True) + ':' +  LJsonObj.ToJSON(True));
         end;
         LJsonObj.Free;
@@ -626,7 +552,7 @@ begin
       if Supports(LTypedObj, IJX2) then
       begin
         LJsonObj := W3DJsonX2.Obj.TJsonObject(W3DJsonX2.Obj.TJsonObject.NewInstance);
-        InternalSerialize(LTypedObj, LJsonObj, AJsonPatcher, ASettings);
+        Serialize(LTypedObj, LJsonObj, AJsonPatcher, ASettings);
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode( LJsonObj.ToJSON(True));
         LJsonObj.Free;
        end
@@ -644,7 +570,7 @@ end;
 function TJsonX2.Serialize(Obj: TObject; ASettings: TJX2Settings = []): string;
 var
   LJsonObj: TJsonObject;
-  LJsonPatcher: TJsonXPatcher;
+  LJsonPatcher: TJX2Patcher;
 begin
   Result := '';
   LJsonObj := Nil;
@@ -652,8 +578,8 @@ begin
   try
     try
       LJsonObj := W3DJsonX2.Obj.TJsonObject(W3DJsonX2.Obj.TJsonObject.NewInstance);
-      LJsonPatcher := TJsonXPatcher.Create;
-      InternalSerialize(Obj, LJSonObj, LJsonPatcher, ASettings);
+      LJsonPatcher := TJX2Patcher.Create;
+      Serialize(Obj, LJSonObj, LJsonPatcher, ASettings);
       Result :=  LJsonObj.ToJSON(True) ;
       LJsonPatcher.Decode(Result);
       if (jxoReturnEmptyJsonString in ASettings) and (LJsonObj.Count = 0) then Result := '';
@@ -670,7 +596,7 @@ end;
 
 {$REGION}
 
-procedure TJsonX2.InternalDeserialize(
+procedure TJsonX2.Deserialize(
             AObj: TObject;
             AJsonObj: TJsonObject;
             ASettings: TJX2Settings);
@@ -706,9 +632,9 @@ var
   LTValue: TValue;
   LExplicit: Boolean;
   LAttr: TCustomAttribute;
-  LAttrConv: TJX2Converter;
+  LAttrIntf: IJX2Converter;
 
-  function GetFieldName(AJsonName: string; var AExplicit: Boolean): TRTTIField;
+  function GetFieldName(const AJsonName: string; var AExplicit: Boolean): TRTTIField;
   var
     AAttr: JX2AttrName;
   begin
@@ -728,7 +654,6 @@ begin
   LFields := GetFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
-    LNewObj := nil;
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
     LRTTIField := GetFieldName(LJName, LExplicit);
@@ -765,15 +690,17 @@ begin
 
     if LRTTIField.FieldType.TypeKind in [tkClass] then
     begin
+
+      if LJValue.IsNull then
+      begin
+        LRTTIField.SetValue(AObj, Nil);
+        Continue;
+       end;
+
       LInstance := LRTTIField.FieldType.AsInstance;
 
       if LInstance.MetaclassType = TJX2ValueObjDic then
       begin
-        if LJValue.IsNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ValueObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
@@ -784,7 +711,7 @@ begin
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
-          InternalDeserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
+          Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
           LNewValueObj.Add(LPair.Name, LNewObj);
         end;
         Continue;
@@ -793,11 +720,6 @@ begin
       {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarObjDic then
       begin
-        if LJValue.IsNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2VarObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
@@ -808,7 +730,7 @@ begin
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
-          InternalDeserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
+          Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
           LNewVarObj.Add(LPair.Name, LNewObj);
         end;
         Continue;
@@ -817,11 +739,6 @@ begin
 
       if LInstance.MetaclassType = TJX2StrObjDic then
       begin
-        if LJValue.IsNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
@@ -832,7 +749,7 @@ begin
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
-          InternalDeserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
+          Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
           LNewStrObj.Add(LPair.Name, LNewObj);
         end;
         Continue;
@@ -840,11 +757,6 @@ begin
 
       if LInstance.MetaclassType = TJX2ObjList then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
@@ -856,34 +768,24 @@ begin
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
           LNewObjList.Add(LNewObj);
-          InternalDeserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
+          Deserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
         end;
         Continue
       end else
 
       if LInstance.MetaclassType = TJX2ValueList then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LNewValueList := TJX2ValueList.Create;
         LRTTIField.SetValue(AObj, LNewValueList);
         LNewValueList.Capacity := LJValue.ArrayValue.Count;
         for i := 0 to LJValue.ArrayValue.count - 1 do
-          LNewValueList.Add(JsonTypeToTValue(LJValue.ArrayValue.Values[i]));
+          LNewValueList.Add(JsonToTValue(LJValue.ArrayValue.Values[i]));
         Continue;
       end else
 
       {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarList then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LNewVarList := TJX2VarList.Create;
         LRTTIField.SetValue(AObj, LNewVarList);
         LNewVarList.Capacity := LJValue.ArrayValue.Count;
@@ -894,43 +796,28 @@ begin
 
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LNewStrVar := TJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
         for i := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[i],LJsObj.Values[LJsObj.Names[i]]);
-        Continue
+        Continue;
       end else
       {$ENDIF}
 
       if LInstance.MetaclassType = TJX2StrValueDic then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LNewStrValue := TJX2StrValueDic.Create;
         LRTTIField.SetValue(AObj, LNewStrValue);
         LJsObj := LJValue.ObjectValue;
         for i := 0 to LJsObj.count - 1 do
-          LNewStrValue.Add(LJsObj.Names[i], JsonTypeToTValue(LJsObj.Values[ LJsObj.Names[i]]));
+          LNewStrValue.Add(LJsObj.Names[i], JsonToTValue(LJsObj.Values[ LJsObj.Names[i]]));
         Continue
       end else
 
       {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
         LNewStrVar := TJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
@@ -941,45 +828,20 @@ begin
       {$ENDIF}
 
       begin
-        if LJValue.isNull then
-        begin
-           LRTTIField.SetValue(AObj, Nil);
-           Continue;
-        end;
-
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
-          LAttrConv := nil;
           try
-            try
-              LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
-              (*
-              case LJValue.Typ of
-                jdtNone: LNewObj := nil ;
-                jdtString: LNewObj := LAttrConv.FromJson(LJValue.Value);
-                jdtInt: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-                jdtLong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-                jdtULong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-                jdtFloat: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-                jdtDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-                jdtUtcDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-                jdtBool: LNewObj := LAttrConv.FromJson(LowerCase(BoolToStr(LJValue.BoolValue)));
-                jdtArray: LNewObj := LAttrConv.FromJson(LJValue.ArrayValue.ToJSON);
-                jdtObject: LNewObj := LAttrConv.FromJson(LJValue.ObjectValue.ToJSON);
-              end;
-              *)
-              LNewObj := LAttrConv.FromJson(LJValue);
-              LRTTIField.SetValue(AObj, LNewObj);
-            finally
-              LAttrConv.Free;
-            end;
-          except end; //Silent
+           	if not Assigned(JX2AttrConv(LAttr)) then Continue;
+            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
+            LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, Self, LRTTIField, '', AJsonObj, LJValue));
+            LRTTIField.SetValue(AObj, LNewObj);
+          except end;
           Continue;
         end;
 
         LNewObj := LInstance.MetaclassType.Create;
-        InternalDeserialize(LNewObj, LJValue.ObjectValue, ASettings);
+        Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
         LRTTIField.SetValue(AObj, LNewObj);
         Continue
       end;
@@ -988,45 +850,27 @@ begin
     if LRTTIField.FieldType.TypeKind in [tkInterface] then
     begin
 
+      if LJValue.IsNull then
+      begin
+        LRTTIField.SetValue(aObj, Nil);
+        Continue;
+      end;
+
       LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
-       LAttrConv := nil;
         try
-          try
-            LAttrConv := TJX2Converter(JX2AttrConv(LAttr).FConv.Create);
-            (*
-            case LJValue.Typ of
-              jdtNone: LNewObj := nil ;
-              jdtString: LNewObj := LAttrConv.FromJson(LJValue.Value);
-              jdtInt: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-              jdtLong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-              jdtULong: LNewObj := LAttrConv.FromJson(LJValue.IntValue.ToString);
-              jdtFloat: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-              jdtDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-              jdtUtcDateTime: LNewObj := LAttrConv.FromJson(FloatToStr(LJValue.FloatValue));
-              jdtBool: LNewObj := LAttrConv.FromJson(LowerCase(BoolToStr(LJValue.BoolValue)));
-              jdtArray: LNewObj := LAttrConv.FromJson(LJValue.ArrayValue.ToJSON);
-              jdtObject: LNewObj := LAttrConv.FromJson(LJValue.ObjectValue.ToJSON);
-            end;
-            *)
-            LNewObj := LAttrConv.FromJson(LJValue);
-            LRTTIField.SetValue(AObj, LNewObj);
-          finally
-            LAttrConv.Free;
-          end;
-        except end; //Silent
+          if not Assigned(JX2AttrConv(LAttr)) then Continue;
+          if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
+          LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, Self, LRTTIField, '', AJsonObj));
+          LRTTIField.SetValue(aObj, LNewObj);
+        except end;
         Continue;
       end;
 
       LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
       if LAttr = Nil then
         raise Exception.Create('Interface is missing JX2AttrClass : ' + LRTTIField.Name);
-      if LJValue.IsNull then
-      begin
-        LRTTIField.SetValue(aObj, Nil);
-        Continue;
-      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ObjList) then
       begin;
@@ -1038,7 +882,7 @@ begin
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
           Supports(LNewObj, IJX2, LIntf);
           LINewObjList.Add(LIntf);
-          InternalDeserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
+          Deserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
         end;
       end else
 
@@ -1048,7 +892,7 @@ begin
         LINewValList.Capacity := LJValue.ArrayValue.Count;
         LRTTIField.SetValue(AObj, LINewValList);
         for i := 0 to LJValue.ArrayValue.count - 1 do
-          LINewValList.Add(JsonTypeToTValue(LJValue.ArrayValue.Values[i]));
+          LINewValList.Add(JsonToTValue(LJValue.ArrayValue.Values[i]));
       end else
 
       {$IFNDEF JSX_NOVAR}
@@ -1079,7 +923,7 @@ begin
         LRTTIField.SetValue(AObj, LINewStrValueDic);
         LJsObj := LJValue.ObjectValue;
         for i := 0 to LJsObj.count - 1 do
-          LINewStrValueDic.Add(LJsObj.Names[i], JsonTypeToTValue(LJsObj.Values[LJsObj.Names[i]]));
+          LINewStrValueDic.Add(LJsObj.Names[i], JsonToTValue(LJsObj.Values[LJsObj.Names[i]]));
       end else
 
       {$IFNDEF JSX_NOVAR}
@@ -1092,7 +936,7 @@ begin
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
-          InternalDeserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
+          Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
           Supports(LNewObj, IJX2, LIntf);
           LINewVarObjDic.Add(LPair.Name, LIntf);
         end;
@@ -1108,7 +952,7 @@ begin
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
-          InternalDeserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
+          Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings);
           Supports(LNewObj, IJX2, LIntf);
           LINewStrObjDic.Add(LPair.Name, LIntf);
         end;
@@ -1117,7 +961,7 @@ begin
       begin
         if LJValue.ObjectValue = Nil then Continue;
         LNewObj := JX2AttrClass(LAttr).FClass.Create;
-        InternalDeserialize(LNewObj, LJValue.ObjectValue, ASettings);
+        Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
         LRTTIField.SetValue(AObj, LNewObj);
       end;
 
@@ -1137,7 +981,7 @@ begin
     try
       LJsonObj := W3DJsonX2.Obj.TJsonObject.Parse(AJsonStr);
       LObj := T.Create;
-      InternalDeserialize(LObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
+      Deserialize(LObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
       Result := T(LObj);
     finally
       LJsonObj.Free;
@@ -1163,7 +1007,7 @@ begin
     try
       LJsonObj := W3DJsonX2.Obj.TJsonObject.Parse(AJsonStr);
       LTIObj := AIntfClass.Create as TObject;
-      InternalDeserialize(LTIObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
+      Deserialize(LTIObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
       supports(LTIObj, IJX2, Result);
     finally
       LJsonObj.Free;
@@ -1177,9 +1021,23 @@ begin
   end;
 end;
 
+function TJsonX2.Beautifier(const AJsonStr : string; Compact: Boolean): string;
+var
+  LJsonObj: TJsonObject;
+begin
+  Result := '{}';
+  LJsonObj := TJsonObject(W3DJsonX2.Obj.TJsonObject.NewInstance);
+  try
+    LJsonObj.FromJSON(AJsonStr);
+    Result := LJsonObj.ToJSon(Compact);
+  finally
+    LJsonObj.Free;
+  end;
+end;
+
 initialization
-  W3DJSX2 := TJsonX2.Create;
+  W3DJX2 := TJsonX2.Create;
 finalization
-  W3DJSX2.Free;
+  W3DJX2.Free;
 end.
 

@@ -21,6 +21,7 @@ object Form2: TForm2
   object Memo1: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
+    TextSettings.WordWrap = True
     Align = Client
     Size.Width = 640.000000000000000000
     Size.Height = 439.000000000000000000

@@ -29,43 +29,39 @@ unit W3DJsonX2.Utils;
 {$ENDIF}
 
 interface
-uses Sysutils, Classes;
-
-const
-  BStrL: array[Boolean] of string = ('false','true');
-  BStrK: array[Boolean] of string = ('False','True');
-  BStrU: array[Boolean] of string = ('FALSE','TRUE');
+uses
+    Classes
+  , Sysutils
+  , RTTI;
 
 type
   // TStream Helpers
   TStreamHelper = class helper for TStream
-    function WriteRawAnsiString( Str: AnsiString ): Integer;
-    function WriteRawUTF8String( Str: UTF8String ): Integer;
-    function WriteRawUnicodeString( Str: string ): Integer;
-    function ReadRawString( Encoding: TEncoding ): string;
-    function ToStringStream( DefaultString: string;  Encoding: TEncoding ): TStringStream;
-    function ToString(  Encoding: TEncoding  ): string; overload;
+    function WriteRawAnsiString(Str: AnsiString): Integer;
+    function WriteRawUTF8String(Str: UTF8String): Integer;
+    function WriteRawUnicodeString(Str: string): Integer;
+    function ReadRawString(Encoding: TEncoding): string;
+    function ToStringStream(DefaultString: string;  Encoding: TEncoding): TStringStream;
+    function ToString(Encoding: TEncoding): string; overload;
   end;
   // HTTP
-  function URLEncode(const ToEncode: string): string;
+  function  URLEncode(const ToEncode: string): string;
   // Strings
-  function  FPos(const aSubStr, aString : string; aStartPos: Integer = 1): Integer;
-  function  RPos(const aSubStr, aString : string; aStartPos: Integer): Integer;
-  function  OnceFastReplaceStr(var Str: string; const  SubStr: string; const RplStr : string; StartPos: integer; Backward: Boolean = False): Integer;
   function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
   // Tools
+  function  IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject; overload;
   {$IF defined(JSX_NOVAR)}
   function  IIF(Condition: Boolean; IsTrue, IsFalse: variant): variant; overload;
+  {$ELSE}
+  function  IIF(Condition: Boolean; IsTrue, IsFalse: TValue): TValue; overload;
   {$ENDIF}
-  function  IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject; overload;
   function  StringGUID: string;
   function  DelphiGUID: string;
   procedure BreakPoint(Msg: string = 'BreakPoint'; NoBreak: Boolean = False);
+  // Windows System
   {$IF defined(MSWINDOWS)}
   function  GetProcessMemory(ProcessHandle: THandle): NativeUInt;
-  // System
-  
-  function Is_x64: Boolean;
+  function  Is_x64: Boolean;
   {$ENDIF}
 
 implementation
@@ -95,6 +91,11 @@ end;
 
 
 function IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject;
+begin
+  if Condition then Result := IsTrue else Result := IsFalse;
+end;
+
+function IIF(Condition: Boolean; IsTrue, IsFalse: TValue): TValue;
 begin
   if Condition then Result := IsTrue else Result := IsFalse;
 end;
@@ -224,11 +225,6 @@ begin
     Move(Value[0], Result[1], Length(Value));
 end;
 
-function LenStr(const Str: string): Integer; inline;
-begin
-  Result :=  PInteger(@PByte(Str)[-4])^;
-end;
-
 function LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
 var
   FS : TFileStream;
@@ -240,71 +236,6 @@ begin
   finally
     FS.Free;
   end;
-end;
-
-function FPos(const aSubStr, aString : string; aStartPos: Integer): Integer; inline;
-var
-  Len: Int64;
-begin
-  Len := LenStr(aSubStr) * Sizeof(Char);
-  for Result := 1 to  LenStr(aString) -  LenStr(aSubStr) + 1  do
-    if CompareMem(Pointer(aSubStr),  PByte(aString) +((Result - 1) * Sizeof(Char)), Len) then Exit;
-  Result := 0;
-end;
-
-function RPos(const aSubStr, aString : string; aStartPos: Integer): Integer; inline;
-var
-  Len: Int64;
-begin
-  Len :=  LenStr(aSubStr) * Sizeof(Char);
-  for Result := (aStartPos - LenStr(aSubStr)) + 1  downto 1 do
-    if CompareMem(Pointer(aSubStr),  PByte(aString) +((Result - 1) * Sizeof(Char)), Len) then Exit;
-  Result := 0;
-end;
-
-function OnceFastReplaceStr(var Str: string; const SubStr: string; const RplStr : string; StartPos: integer; Backward: Boolean = False) : Integer;
-var
-  s: string;
-  N0, N1, N2, Src, Dst, Len : Int64;
-begin
-
-  if Backward then
-    Result := RPos(SubStr, Str, StartPos)
-  else
-    Result := FPos(SubStr, Str, StartPos);
-
-  if Result = 0 then Exit;
-
-  N1 := LenStr(SubStr);
-  N2 := LenStr(RplStr);
-  if N2 = N1 then
-  begin
-    Move(RplStr[1], Str[Result], N2 * SizeOf(Char));
-  end else
-  if N2 > N1 then
-  begin
-    N0 := LenStr(Str);
-    SetLength(Str, N0 +  N2 - N1) ;
-    Src := Result + N1;
-    Dst := Result + N2;
-    Len := LenStr(Str) - (Result-1 + N2);
-    Move(Str[Src], Str[Dst], Len * SizeOf(Char));
-    Move(RplStr[1], Str[Result], N2 * SizeOf(Char));
-  end else
-  if N1 > N2 then
-  begin
-    N0 := LenStr(Str);
-    Move(RplStr[1], Str[Result], N2 * SizeOf(Char));
-    Src := Result + N1;
-    Dst := Result + N2;
-    Len := N0 - (Result-1 + N1) ;
-    s := Src.ToString + ' - ' + Dst.ToString + ' - ' + Len.ToString;
-    Move( Str[Src], Str[Dst], Len * SizeOf(Char) );
-    SetLength(Str, N0 + (N2 - N1));
-  end;
-
-  if Backward then Result := Result + N2;
-
 end;
 
 {$IF defined(MSWINDOWS)}

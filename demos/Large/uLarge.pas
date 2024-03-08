@@ -11,6 +11,7 @@ uses
   , W3DJsonX2
   , W3DJsonX2.RTTI
   , W3DJsonX2.Types
+  , W3DJsonX2.Conv
   , W3DJsonX2.Utils
   , W3DCloneable, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
   FMX.Controls.Presentation, FMX.StdCtrls
@@ -28,6 +29,19 @@ type
     { Public declarations }
   end;
 
+  IJX2ObjListX = Interface
+    ['{0B303C81-3234-4030-9C72-E2DB0AE75445}']
+  end;
+
+   TIList<T> = class(TList<T>, IJX2ObjListX)
+   protected
+    FRefCount: Integer;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  end;
+
+
   FvalueConst = class(TJX2)
     applicableForLocalizedAspectName: variant;
     applicableForLocalizedAspectValues: TJX2ValueList;
@@ -38,13 +52,14 @@ type
     [JX2AttrClass(FvalueConst)]
     valueConstraints : TJX2ObjList;
     applicableForLocalizedAspectName: TValue;
-    applicableForLocalizedAspectValues: TJX2ValueList;
+    [JX2AttrConv(TIJX2ValueListConv)]
+    applicableForLocalizedAspectValues: TList<TValue>;
   end;
 
   TFaspectValues = class(TJX2)
     localizedValue: TValue;
-    [JX2AttrClass(FvalueConstraint)]
-    valueConstraints: TJX2ObjList;
+    [JX2AttrConv(TIJX2ObjectListConv, FvalueConstraint)]
+    valueConstraints: TObjectList<TObject>;
   end;
 
   TaspectConstraint = class(TJX2)
@@ -68,22 +83,22 @@ type
   TcategoryAspect = class(TJX2)
     localizedAspectName: TValue;
     aspectConstraint: TaspectConstraint;
-    [JX2AttrClass(TFaspectValues)]
-    aspectValues: TJX2ObjList;
+    [JX2AttrConv(TIJX2ObjectListConv, TFaspectValues)]
+    aspectValues: TObjectList<TObject>;
   end;
 
   TcategoryAspects = class(TJX2)
     category: TcategoryAspectName;
     [JX2AttrClass(TcategoryAspect)]
-    aspects: TJX2ObjList;
+    aspects: TJX2ObjList; // or TIJX2ObjectListConv;
   end;
 
   TfetchItemAspectsContentType = class(TJX2)
   public
-    categoryTreeId: variant;
-    categoryTreeVersion: variant;
-    [JX2AttrClass(TcategoryAspects)]
-    categoryAspects: TJX2ObjList;
+    categoryTreeId: TValue;
+    categoryTreeVersion: TValue;
+    [JX2AttrConv(TIJX2ObjectListConv, TcategoryAspects)]
+    categoryAspects: TObjectList<TObject>;
   end;
 
 var
@@ -101,6 +116,8 @@ var
 begin
   Obj := nil;
   try
+    var A : TJX2DataBlock;
+
     OpenDialog1.InitialDir := ExtractFilePath( ParamStr(0) );
     if not OpenDialog1.Execute then Exit;
     Sw := TStopWatch.StartNew;
@@ -109,7 +126,7 @@ begin
     SW.Stop;
     Memo1.Lines.Add('Read in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;
-    Obj := W3DJSX2.Deserialize<TfetchItemAspectsContentType>(Json, []);
+    Obj := W3DJX2.Deserialize<TfetchItemAspectsContentType>(Json, []);
     Sw.Stop;
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;
@@ -121,9 +138,33 @@ begin
     Memo1.Lines.Add('eBay Aspect values : ' + AspectValueCount.ToString + ' (TObject Created)');
     Sw.Stop;
     Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
+
   finally
     Obj.Free;
   end;
+end;
+
+
+{ TIJX2ObjListX<T> }
+
+function TIList<T>.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TIList<T>._AddRef: Integer;
+begin
+  Result := AtomicIncrement(FRefCount);
+end;
+
+function TIList<T>._Release: Integer;
+begin
+  Result := AtomicDecrement(FRefCount);
+  if Result = 0 then
+    Destroy;
 end;
 
 end.

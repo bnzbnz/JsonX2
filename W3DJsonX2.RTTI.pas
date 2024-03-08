@@ -97,21 +97,21 @@ end;
 function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
 var
   LIdx: Integer;
-  LAttr: TArray<TCustomAttribute>;
+  LAttrs: TArray<TCustomAttribute>;
 begin
 
 {$IFNDEF JSX_NOCACHE}
   MonitorEnter(_RTTIAttrsCacheDic);
   Result := Nil;
-  if not _RTTIAttrsCacheDic.TryGetValue(Field, LAttr) then
+  if not _RTTIAttrsCacheDic.TryGetValue(Field, LAttrs) then
   begin
-     LAttr := Field.GetAttributes;
-    _RTTIAttrsCacheDic.Add(Field, LAttr);
+     LAttrs := Field.GetAttributes;
+    _RTTIAttrsCacheDic.Add(Field, LAttrs);
   end;
-  for LIdx := 0 to Length(LAttr) - 1 do
-    if LAttr[LIdx].ClassType = AttrClass then
+  for LIdx := Length(LAttrs) - 1 downto 0 do
+    if LAttrs[LIdx].ClassType = AttrClass then
     begin
-      Result := LAttr[LIdx];
+      Result := LAttrs[LIdx];
       Break;
     end;
   MonitorExit(_RTTIAttrsCacheDic);

@@ -36,24 +36,47 @@ uses
   , RTTI
   , W3DCloneable
   , W3DJsonX2.Obj
+  , W3DJsonX2.RTTI
+  , W3DJsonX2.Utils
+  , W3DJsonX2.Patch
   ;
 
 type
 
   TJX2Setting = (
-    jxExplicitBinding           // Serialize/Deserialize only fields having an explicit JX2AttrName attribut
+    jxExplicitBinding           // Serialize/Deserialize only fields having an explicit JX2AttrName attribute
     , jxoRaiseException         // Re-raise exception instead of an empty result;
-    , jxoUnassignedToNull
     , jxoReturnEmptyJsonString  // Serialize: return an empty string instead of '{}' when the object is empty
   );
   TJX2Settings = set of TJX2Setting;
 
   IJX2 = Interface;
 
-  TJX2Converter = class
-    function ToJson(ASelfObj: TObject): string; virtual; abstract;
-    function FromJson(JsonObject: PJsonDataValue) : TObject; virtual; abstract;
-    function Clone(ASelfObj: TObject): TObject; virtual; abstract;
+  TJX2DataBlock = record
+  SelfObj: TObject;
+  Field: TRttiField;
+  JsonStr: string;
+  JsonObj: TJsonObject;
+  Settings: TJX2Settings;
+  JsonVal: PJsonDataValue;
+  Patcher: TJX2Patcher;
+  constructor Create(
+    ASettings: TJX2Settings;
+    ASelfObj: TObject;
+    AField: TRttiField = nil;
+    AJsonStr: string = '';
+    AJsonObj: TJsonObject = nil;
+    AJsonVal: PJsonDataValue = nil;
+    APatcher: TJX2Patcher = nil
+  );
+  end;
+
+  IJX2Converter = interface(IInterface)
+    ['{A8023240-7045-4CA8-8773-A202B369910B}']
+    function  OnSerialize(AData: TJX2DataBlock): string;
+    function  OnDeserialize(AData: TJX2DataBlock) : TObject;
+    function  OnClone(AData: TJX2DataBlock): TObject;
+    procedure OnDestroy(AData: TJX2DataBlock);
   end;
 
 {$REGION 'Attributes'}
@@ -75,7 +98,8 @@ type
   JX2AttrConv = class(TCustomAttribute)
   public
     FConv: TClass;
-    constructor Create(AConv: TClass);
+    FClass: TClass;
+    constructor Create(AConv: TClass; AClass: TClass = nil);
   end;
 
   JX2AttrExclude = class(TCustomAttribute)
@@ -85,6 +109,8 @@ type
 {$ENDREGION}
 
 {$REGION 'Interfaces'}
+
+{ TJX2ToJsonDataBlock }
 
   IJX2 = interface(IW3DCloneable)
   ['{CA357255-FAC5-4D38-8980-4B89875FE491}']
@@ -148,7 +174,6 @@ type
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
   end;
-
 
   IJX2StrVarDic = Interface
   ['{606B2C55-0D3F-4A65-B881-2920D3E3478A}']
@@ -289,8 +314,7 @@ type
 
 implementation
 uses
-  W3DJsonX2.RTTI
-  , SysUtils
+  SysUtils
   , System.TypInfo
   , W3DJsonX2
 {$IFNDEF JSX_NOVAR}
@@ -312,13 +336,172 @@ begin
   FName := AName;
 end;
 
-constructor JX2AttrConv.Create(AConv: TClass);
+constructor JX2AttrConv.Create(AConv: TClass; AClass: TClass = nil);
 begin
   FConv := AConv;
+  FClass := AClass;
 end;
 
-
 {$ENDREGION}
+
+procedure GenericClone(ASelf: TObject; ADest: TObject; AField: TRTTIField);
+var
+  LValue: TValue;
+  LInstance: TRTTIInstanceType;
+  LObj: TObject;
+  LAttr: TCustomAttribute;
+  LAttrIntf: IJX2Converter;
+  LIntf: IJX2;
+  LTIJX2: TIJX2;
+begin
+  if not Assigned(ADest) then exit;
+  if not Assigned(ASelf) then
+  begin
+    AField.SetValue(ADest, nil);
+    Exit;
+  end;
+  if (AField.FieldType.TypeKind = tkRecord) and (AField.FieldType.Handle = TypeInfo(TValue)) then
+  begin
+    if AField.GetValue(ASelf).TryAsType<TValue>(LValue) then
+      AField.SetValue(ADest, LValue);
+  end else
+  {$IFNDEF JSX_NOVAR}
+  if AField.FieldType.TypeKind = tkVariant then
+  begin
+    LValue :=  AField.GetValue(ASelf);
+    if not VarIsEmpty(LValue.AsVariant) then AField.SetValue(ADest, LValue);
+  end else
+  {$ENDIF}
+  if AField.FieldType.TypeKind = tkClass then
+  begin
+    {$REGION 'tkClass'}
+    LInstance := AField.FieldType.AsInstance;
+    LObj := AField.GetValue(ASelf).AsObject;
+    if Assigned(LObj) then
+    begin
+
+      {$IFNDEF JSX_NOVAR}
+      if LInstance.MetaclassType = TJX2VarList then
+        AField.SetValue(ADest, TJX2VarList(LObj).Clone)
+      else
+      {$ENDIF}
+      if LInstance.MetaclassType = TJX2ObjList then
+        AField.SetValue(ADest, TJX2ObjList(LObj).Clone)
+      else
+      {$IFNDEF JSX_NOVAR}
+      if LInstance.MetaclassType = TJX2StrVarDic then
+        AField.SetValue(ADest, TJX2StrVarDic(LObj).Clone)
+      else
+      {$ENDIF}
+      if LInstance.MetaclassType = TJX2StrValueDic then
+        AField.SetValue(ADest, TJX2StrValueDic(LObj).Clone)
+      else
+      {$IFNDEF JSX_NOVAR}
+      if LInstance.MetaclassType = TJX2VarObjDic then
+        AField.SetValue(ADest, TJX2VarObjDic(LObj).Clone)
+      else
+      {$ENDIF}
+      if LInstance.MetaclassType = TJX2ValueList then
+        AField.SetValue(ADest, TJX2ValueList(LObj).Clone)
+      else
+      if LInstance.MetaclassType = TJX2ValueObjDic then
+        AField.SetValue(ADest, TJX2ValueObjDic(LObj).Clone)
+      else
+      if LInstance.MetaclassType = TJX2StrObjDic then
+        AField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
+      else
+      begin
+        LAttr := GetFieldAttribute(AField, JX2AttrConv);
+        if Assigned(LAttr) then
+        begin
+          try
+            if not Assigned(JX2AttrConv(LAttr)) then Exit;
+            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Exit;
+            AField.SetValue(ADest, LAttrIntf.OnClone(TJX2DataBlock.Create([], LObj, nil, '', nil)) );
+          except end;
+          Exit;
+        end;
+        if LObj is TJX2 then
+          AField.SetValue(ADest, TJX2(LObj).Clone)
+        else
+          AField.SetValue(ADest, nil);
+      end;
+    end;
+   {$ENDREGION 'tkClass'}
+  end else
+  if AField.FieldType.TypeKind = tkInterface then
+  begin
+
+   {$REGION 'tkInterface'}
+
+    if AField.GetValue(ASelf).AsInterface= nil then  Exit;
+
+    LAttr := GetFieldAttribute(AField, JX2AttrConv);
+    if Assigned(LAttr) then
+    begin
+      LAttr := GetFieldAttribute(AField, JX2AttrConv);
+      if Assigned(LAttr) then
+      begin
+      try
+        if not Assigned(JX2AttrConv(LAttr)) then Exit;
+        if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Exit;
+        AField.SetValue(ADest, LAttrIntf.OnClone(TJX2DataBlock.Create([], LObj, nil, '', nil)) );
+      except end;
+        Exit;
+      end;
+    end;
+
+     if Supports(AField.GetValue(ASelf).AsInterface, IJX2, LIntf) then
+     begin
+
+      LObj  := AField.GetValue(ASelf).AsInterface as TObject;
+
+      {$IFNDEF JSX_NOVAR}
+      if Supports(LObj, IJX2VarList) then
+        AField.SetValue(ADest, TValue.From<IJX2VarList>(IJX2VarList(TIJX2VarList( TIJX2VarList(LObj).Clone ).Clone)) )
+      else
+      {$ENDIF}
+      if Supports(LObj, IJX2ObjList) then
+        AField.SetValue(ADest, TValue.From<IJX2ObjList>(IJX2ObjList(TIJX2ObjList( TIJX2ObjList(LObj).Clone ).Clone)) )
+      else
+      {$IFNDEF JSX_NOVAR}
+      if Supports(LObj, IJX2StrVarDic) then
+        AField.SetValue(ADest, TValue.From<IJX2StrVarDic>(IJX2StrVarDic(TIJX2StrVarDic( TIJX2StrVarDic(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2VarObjDic) then
+        AField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic( TIJX2VarObjDic(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2VarObjDic) then
+        AField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic( TIJX2VarObjDic(LObj).Clone ).Clone)) )
+      else
+      {$ENDIF}
+      if Supports(LObj, IJX2ValueList) then
+        AField.SetValue(ADest, TValue.From<IJX2ValueList>(IJX2ValueList(TIJX2ValueList( TIJX2ValueList(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2ValueObjDic) then
+        AField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic( TIJX2ValueObjDic(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2ValueObjDic) then
+        AField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic( TIJX2ValueObjDic(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2StrValueDic) then
+        AField.SetValue(ADest, TValue.From<IJX2StrValueDic>(IJX2StrValueDic(TIJX2StrValueDic( TIJX2StrValueDic(LObj).Clone ).Clone)) )
+      else
+      if Supports(LObj, IJX2StrObjDic) then
+        AField.SetValue(ADest, TValue.From<IJX2StrObjDic>(IJX2StrObjDic(TIJX2StrObjDic( TIJX2StrObjDic(LObj).Clone ).Clone)) )
+      else
+      begin
+        LTIJX2:= AField.GetValue(ASelf).AsInterface as TIJX2;
+        if Assigned(LTIJX2) then AField.SetValue(ADest, TValue.From<IJX2>(TIJX2(LTIJX2).CloneSelf));
+        end;
+     end;
+
+   {$ENDREGION 'tkInterface'}
+  end else
+  begin
+
+  end;
+end;
 
 {$REGION 'Interfaces'}
 
@@ -355,83 +538,10 @@ end;
 
 procedure TIJX2.CloneTo(ADestIntf: IJX2);
 var
-  LNewObj: TObject;
   Field: TRttiField;
-  LValue: TValue;
-  LDestObj, LFieldObj: TObject;
-  LObjIntf: IJX2;
 begin
-  if ADestIntf = nil then exit;
-  LDestObj := ADestIntf as TObject;
-  for Field in GetFields(Self) do
-  begin
-    if (Field.FieldType.TypeKind = tkRecord) and (Field.FieldType.Handle = TypeInfo(TValue)) then
-    begin
-      LValue := Field.GetValue(Self);
-      Field.SetValue(LDestObj, LValue);
-    end else
-    {$IFNDEF JSX_NOVAR}
-    if Field.FieldType.TypeKind = tkVariant then
-    begin
-      LValue := Field.GetValue(Self);
-      Field.SetValue(LDestObj, LValue);
-    end else
-    {$ENDIF}
-      if Field.FieldType.TypeKind in [tkInterface] then
-      begin
-        if not Supports(field.GetValue(Self).Asinterface, IJX2, LObjIntf) then Continue;
-        LFieldObj := LObjIntf as TObject;
-        if LFieldObj <> nil then
-        begin
-          {$IFNDEF JSX_NOVAR}
-          if LFieldObj is TIJX2VarList then
-          begin
-            LValue := TValue.From<IJX2VarList>( IJX2VarList( TIJX2VarList(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          {$ENDIF}
-          if LFieldObj is TIJX2ValueList then
-          begin
-            LValue := TValue.From<IJX2ValueList>( IJX2ValueList( TIJX2ValueList(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          if LFieldObj is TIJX2StrValueDic then
-          begin
-            LValue := TValue.From<IJX2StrValueDic>( IJX2StrValueDic( TIJX2StrValueDic(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          if LFieldObj is TIJX2ObjList then
-          begin
-            LValue := TValue.From<IJX2ObjList>( IJX2ObjList( TIJX2ObjList(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          {$IFNDEF JSX_NOVAR}
-          if LFieldObj is TIJX2StrVarDic then
-          begin
-            LValue := TValue.From<IJX2StrVarDic>( IJX2StrVarDic( TIJX2StrVarDic(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          if LFieldObj is TIJX2VarObjDic then
-          begin
-            LValue := TValue.From<IJX2VarObjDic>( IJX2VarObjDic( TIJX2VarObjDic(LFieldObj).Clone ) );
-            Field.SetValue(LDestObj, LValue);
-          end else
-          {$ENDIF}
-           begin
-            LNewObj := LFieldObj.ClassType.Create;
-            if not Supports(LNewObj, IJX2, LObjIntf) then continue;
-            TIJX2(LFieldObj).CloneTo(LObjIntf);
-            Field.SetValue(LDestObj, LNewObj);
-          end;
-        end;
-      end else
-      if Field.FieldType.TypeKind in [tkClass] then
-      begin
-        LFieldObj := field.GetValue(Self).AsObject;
-        if LFieldObj = Nil then Continue;
-        Field.SetValue(LDestObj, TJX2(LFieldObj).Clone);
-      end;
-  end;
+  for Field in GetFields(ADestIntf as TObject) do
+    GenericClone(Self, ADestIntf as TObject, Field);
 end;
 
   {$ENDREGION 'TIJX2'}
@@ -780,7 +890,7 @@ end;
 
   {$ENDREGION 'TIJX2StrObjDic'}
 
-  {$ENDREGION 'Interfaces'}
+{$ENDREGION 'Interfaces'}
 
 {$REGION 'Classes'}
 
@@ -887,10 +997,19 @@ end;
 destructor TJX2.Destroy;
 var
   LField: TRTTIField;
+  LAttr: JX2AttrConv;
+  LAttrIntf: IJX2Converter;
 begin
   for LField in W3DJsonX2.RTTI.GetFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
-      LField.GetValue(Self).AsObject.Free;
+    begin
+      LAttr := JX2AttrConv(GetFieldAttribute(LField, JX2AttrConv));
+      if Assigned(LAttr) and Assigned(LAttr.FConv) then
+        if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
+          if (LField.GetValue(Self).AsObject <> nil) then
+            LAttrIntf.OnDestroy( TJX2DataBlock.Create([], LField.GetValue(Self).AsObject, LField) );
+      FreeAndNil(LField.GetValue(Self).AsObject);
+    end;
   inherited;
 end;
 
@@ -903,155 +1022,32 @@ end;
 procedure TJX2.CloneTo(ADest: TJX2);
 var
   LField: TRTTIField;
-  LV: TValue;
-  LInstance: TRTTIInstanceType;
-  LObj: TObject;
-  LIntf: IJX2;
-  LTValue: TValue;
-  LTIJX2: TIJX2;
-  LAttrConv: TCustomAttribute;
-  LConverter: TJX2Converter;
 begin
-  if ADest = nil then exit;
-  for LField in GetFields(ADest) do
-  begin
-{$IFNDEF JSX_NOVAR}
-    if LField.FieldType.TypeKind = tkVariant then
-    begin
-      LV :=  LField.GetValue(Self);
-      if not VarIsEmpty(LV.AsVariant) then LField.SetValue(ADest, LV);
-    end else
-{$ENDIF}
-    if LField.FieldType.TypeKind = tkRecord then
-    begin
-      if LField.GetValue(Self).TryAsType<TValue>(LTValue) then
-        if LField.FieldType.Handle = TypeInfo(TValue) then
-          LField.SetValue(ADest, LTValue);
-    end;
-    if LField.FieldType.TypeKind in [tkClass] then
-    begin
-      LInstance := LField.FieldType.AsInstance;
-      LObj := LField.GetValue(Self).AsObject;
-      if Assigned(LObj) then
-      begin
-        {$IFNDEF JSX_NOVAR}
-        if LInstance.MetaclassType = TJX2VarList then
-          LField.SetValue(ADest, TJX2VarList(LObj).Clone)
-        else
-        {$ENDIF}
-        if LInstance.MetaclassType = TJX2ObjList then
-          LField.SetValue(ADest, TJX2ObjList(LObj).Clone)
-        else
-        {$IFNDEF JSX_NOVAR}
-        if LInstance.MetaclassType = TJX2StrVarDic then
-          LField.SetValue(ADest, TJX2StrVarDic(LObj).Clone)
-        else
-        {$ENDIF}
-        if LInstance.MetaclassType = TJX2StrValueDic then
-          LField.SetValue(ADest, TJX2StrValueDic(LObj).Clone)
-        else
-        {$IFNDEF JSX_NOVAR}
-        if LInstance.MetaclassType = TJX2VarObjDic then
-          LField.SetValue(ADest, TJX2VarObjDic(LObj).Clone)
-        else
-        {$ENDIF}
-        if LInstance.MetaclassType = TJX2ValueList then
-          LField.SetValue(ADest, TJX2ValueList(LObj).Clone)
-        else
-        if LInstance.MetaclassType = TJX2ValueObjDic then
-          LField.SetValue(ADest, TJX2ValueObjDic(LObj).Clone)
-        else
-        if LInstance.MetaclassType = TJX2StrObjDic then
-          LField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
-        else begin
-          LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
-          if Assigned(LAttrConv) then
-          begin
-            LConverter := nil;
-            try
-              try
-                LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
-                LField.SetValue(ADest, LConverter.Clone(LObj));
-              except end;
-            finally
-              LConverter.Free;
-            end;
-            Continue;
-          end;
-          LField.SetValue(ADest, TJX2(LObj).Clone);
-        end;
-      end;
-    end else
-    if LField.FieldType.TypeKind in [tkInterface] then
-    begin
-      if LField.GetValue(Self).IsEmpty then Continue;
-      if not Supports(LField.GetValue(Self).AsInterface, IJX2, LIntf) then
-      begin
-        LAttrConv := GetFieldAttribute(LField, JX2AttrConv);
-        if Assigned(LAttrConv) then
-        begin
-          LConverter := nil;
-          try
-            try
-              LConverter := TJX2Converter(JX2AttrConv(LAttrConv).FConv.Create);
-              if not Supports(LField.GetValue(Self).AsInterface, IInterface, LIntf) then Continue;
-              LObj  := LIntf as TObject;
-              LField.SetValue(ADest, LConverter.Clone( LObj ));
-            except end; // Sillent
-          finally
-            LConverter.Free;
-          end;
-        end;
-        Continue;
-      end;
-
-      LObj  := LIntf as TObject;
-
-      {$IFNDEF JSX_NOVAR}
-      if Supports(LObj, IJX2VarList) then
-        LField.SetValue(ADest, TValue.From<IJX2VarList>(IJX2VarList(TIJX2VarList( TIJX2VarList(LObj).Clone ).Clone)) )
-      else
-      {$ENDIF}
-      if Supports(LObj, IJX2ObjList) then
-        LField.SetValue(ADest, TValue.From<IJX2ObjList>(IJX2ObjList(TIJX2ObjList( TIJX2ObjList(LObj).Clone ).Clone)) )
-      else
-      {$IFNDEF JSX_NOVAR}
-      if Supports(LObj, IJX2StrVarDic) then
-        LField.SetValue(ADest, TValue.From<IJX2StrVarDic>(IJX2StrVarDic(TIJX2StrVarDic( TIJX2StrVarDic(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2VarObjDic) then
-        LField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic( TIJX2VarObjDic(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2VarObjDic) then
-        LField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic( TIJX2VarObjDic(LObj).Clone ).Clone)) )
-      else
-      {$ENDIF}
-      if Supports(LObj, IJX2ValueList) then
-        LField.SetValue(ADest, TValue.From<IJX2ValueList>(IJX2ValueList(TIJX2ValueList( TIJX2ValueList(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2ValueObjDic) then
-        LField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic( TIJX2ValueObjDic(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2ValueObjDic) then
-        LField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic( TIJX2ValueObjDic(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2StrValueDic) then
-        LField.SetValue(ADest, TValue.From<IJX2StrValueDic>(IJX2StrValueDic(TIJX2StrValueDic( TIJX2StrValueDic(LObj).Clone ).Clone)) )
-      else
-      if Supports(LObj, IJX2StrObjDic) then
-        LField.SetValue(ADest, TValue.From<IJX2StrObjDic>(IJX2StrObjDic(TIJX2StrObjDic( TIJX2StrObjDic(LObj).Clone ).Clone)) )
-      else
-      begin
-        LTIJX2:= LField.GetValue(Self).AsInterface as TIJX2;
-        if Assigned(LTIJX2) then
-          LField.SetValue(ADest, TValue.From<IJX2>(TIJX2(LTIJX2).CloneSelf));
-
-      end;
-    end;
-  end;
+   for LField in GetFields(ADest) do
+    GenericClone(Self, ADest, LField);
 end;
 
 {$ENDREGION 'Classes'}
+
+constructor TJX2DataBlock.Create(
+    ASettings: TJX2Settings;
+    ASelfObj: TObject;
+    AField: TRttiField = nil;
+    AJsonStr: string = '';
+    AJsonObj: TJsonObject = nil;
+    AJsonVal: PJsonDataValue = nil;
+    APatcher: TJX2Patcher = nil
+  );
+begin
+  inherited;
+  SelfObj := ASelfObj;
+  Field := AField;
+  JsonStr := AJsonStr;
+  JsonObj := AJsonObj;
+  Settings := ASettings;
+  JsonVal := AJsonVal;
+  Patcher := APatcher;
+end;
 
 end.
 
