@@ -490,7 +490,7 @@ begin
           LSL.Add(StrToJSONValue(LStrValue.Key) + ':' + ValueToJSONValue(LStrValue.Value));
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
-		Continue;
+    Continue;
       end else
 
       if Supports(LTypedObj, IJX2StrObjDic) then
@@ -609,7 +609,7 @@ var
   LINewStrVarDic: TIJX2StrVarDic;
   LINewVarObjDic: TIJX2VarObjDic;
   {$ENDIF}
-  i: Integer;
+  LIdx: Integer;
   LFields: TArray<TRTTIField>;
   LJIdx: Integer;
   LJValue: PJsonDataValue;
@@ -764,11 +764,11 @@ begin
         LNewObjList := TJX2ObjList.Create(True);
         LRTTIField.SetValue(aObj, LNewObjList);
         LNewObjList.Capacity := LJValue.ArrayValue.Count;
-        for i := 0 to LJValue.ArrayValue.count - 1 do
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
           LNewObjList.Add(LNewObj);
-          Deserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
+          Deserialize(LNewObj, LJValue.ArrayValue.O[LIdx], ASettings);
         end;
         Continue
       end else
@@ -778,8 +778,8 @@ begin
         LNewValueList := TJX2ValueList.Create;
         LRTTIField.SetValue(AObj, LNewValueList);
         LNewValueList.Capacity := LJValue.ArrayValue.Count;
-        for i := 0 to LJValue.ArrayValue.count - 1 do
-          LNewValueList.Add(JsonToTValue(LJValue.ArrayValue.Values[i]));
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
+          LNewValueList.Add(JsonToTValue(LJValue.ArrayValue.Values[LIdx]));
         Continue;
       end else
 
@@ -789,8 +789,8 @@ begin
         LNewVarList := TJX2VarList.Create;
         LRTTIField.SetValue(AObj, LNewVarList);
         LNewVarList.Capacity := LJValue.ArrayValue.Count;
-        for i := 0 to LJValue.ArrayValue.count - 1 do
-          LNewVarList.Add(LJValue.ArrayValue.V[i]);
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
+          LNewVarList.Add(LJValue.ArrayValue.V[LIdx]);
         Continue
       end else
 
@@ -799,8 +799,8 @@ begin
         LNewStrVar := TJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
-        for i := 0 to LJsObj.count - 1 do
-          LNewStrVar.Add(LJsObj.Names[i],LJsObj.Values[LJsObj.Names[i]]);
+        for LIdx := 0 to LJsObj.count - 1 do
+          LNewStrVar.Add(LJsObj.Names[LIdx],LJsObj.Values[LJsObj.Names[LIdx]]);
         Continue;
       end else
       {$ENDIF}
@@ -810,8 +810,8 @@ begin
         LNewStrValue := TJX2StrValueDic.Create;
         LRTTIField.SetValue(AObj, LNewStrValue);
         LJsObj := LJValue.ObjectValue;
-        for i := 0 to LJsObj.count - 1 do
-          LNewStrValue.Add(LJsObj.Names[i], JsonToTValue(LJsObj.Values[ LJsObj.Names[i]]));
+        for LIdx := 0 to LJsObj.count - 1 do
+          LNewStrValue.Add(LJsObj.Names[LIdx], JsonToTValue(LJsObj.Values[ LJsObj.Names[LIdx]]));
         Continue
       end else
 
@@ -821,8 +821,8 @@ begin
         LNewStrVar := TJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
-        for i := 0 to LJsObj.count - 1 do
-          LNewStrVar.Add(LJsObj.Names[i], LJsObj.Items[i].Value);
+        for LIdx := 0 to LJsObj.count - 1 do
+          LNewStrVar.Add(LJsObj.Names[LIdx], LJsObj.Items[LIdx].Value);
         Continue;
       end else
       {$ENDIF}
@@ -875,14 +875,16 @@ begin
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ObjList) then
       begin;
         LINewObjList := TIJX2ObjList.Create;
-        LRTTIField.SetValue(aObj, LINewObjList);
+        LRTTIField.SetValue(AObj, LINewObjList);
         LINewObjList.Capacity := LJValue.ArrayValue.Count;
-        for i := 0 to LJValue.ArrayValue.count - 1 do
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
         begin
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
-          Supports(LNewObj, IJX2, LIntf);
-          LINewObjList.Add(LIntf);
-          Deserialize(LNewObj, LJValue.ArrayValue.O[i], ASettings);
+          if Supports(LNewObj, IJX2, LIntf) then
+          begin
+            LINewObjList.Add(LIntf);
+            Deserialize(LNewObj, LJValue.ArrayValue.O[LIdx], ASettings);
+          end;
         end;
       end else
 
@@ -891,8 +893,8 @@ begin
         LINewValList := TIJX2ValueList.Create;
         LINewValList.Capacity := LJValue.ArrayValue.Count;
         LRTTIField.SetValue(AObj, LINewValList);
-        for i := 0 to LJValue.ArrayValue.count - 1 do
-          LINewValList.Add(JsonToTValue(LJValue.ArrayValue.Values[i]));
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
+          LINewValList.Add(JsonToTValue(LJValue.ArrayValue.Values[LIdx]));
       end else
 
       {$IFNDEF JSX_NOVAR}
@@ -901,8 +903,8 @@ begin
         LINewVarList := TIJX2VarList.Create;
         LINewVarList.Capacity := LJValue.ArrayValue.Count;
         LRTTIField.SetValue(AObj, LINewVarList);
-        for i := 0 to LJValue.ArrayValue.count - 1 do
-          LINewVarList.Add(LJValue.ArrayValue.V[i]);
+        for LIdx := 0 to LJValue.ArrayValue.count - 1 do
+          LINewVarList.Add(LJValue.ArrayValue.V[LIdx]);
       end else
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrVarDic) then
@@ -911,8 +913,8 @@ begin
         LINewStrVarDic := TIJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LINewStrVarDic);
         LJsObj := LJValue.ObjectValue;
-        for i := 0 to LJsObj.count - 1 do
-          LINewStrVarDic.Add(LJsObj.Names[i], LJsObj.Values[LJsObj.Names[i]].VariantValue);
+        for LIdx := 0 to LJsObj.count - 1 do
+          LINewStrVarDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].VariantValue);
       end else
       {$ENDIF}
 
@@ -922,8 +924,8 @@ begin
         LINewStrValueDic := TIJX2StrValueDic.Create;
         LRTTIField.SetValue(AObj, LINewStrValueDic);
         LJsObj := LJValue.ObjectValue;
-        for i := 0 to LJsObj.count - 1 do
-          LINewStrValueDic.Add(LJsObj.Names[i], JsonToTValue(LJsObj.Values[LJsObj.Names[i]]));
+        for LIdx := 0 to LJsObj.count - 1 do
+          LINewStrValueDic.Add(LJsObj.Names[LIdx], JsonToTValue(LJsObj.Values[LJsObj.Names[LIdx]]));
       end else
 
       {$IFNDEF JSX_NOVAR}
@@ -981,7 +983,7 @@ begin
     try
       LJsonObj := W3DJsonX2.Obj.TJsonObject.Parse(AJsonStr);
       LObj := T.Create;
-      Deserialize(LObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
+      Deserialize(LObj, W3DJsonX2.Obj.TJsonObject(LJsonObj), ASettings);
       Result := T(LObj);
     finally
       LJsonObj.Free;

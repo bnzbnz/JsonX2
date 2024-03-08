@@ -49,12 +49,6 @@ type
   // Strings
   function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
   // Tools
-  function  IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject; overload;
-  {$IF defined(JSX_NOVAR)}
-  function  IIF(Condition: Boolean; IsTrue, IsFalse: variant): variant; overload;
-  {$ELSE}
-  function  IIF(Condition: Boolean; IsTrue, IsFalse: TValue): TValue; overload;
-  {$ENDIF}
   function  StringGUID: string;
   function  DelphiGUID: string;
   procedure BreakPoint(Msg: string = 'BreakPoint'; NoBreak: Boolean = False);
@@ -80,24 +74,6 @@ begin
   {$WARNINGS OFF}
   Result := System.Net.URLClient.TURI.URLEncode(ToEncode);
   {$WARNINGS ON}
-end;
-
-{$IF defined(JSX_NOVAR)}
-function IIF(Condition: Boolean; IsTrue: variant; IsFalse: variant): variant;
-begin
-  if Condition then Result := IsTrue else Result := IsFalse;
-end;
-{$ENDIF}
-
-
-function IIF(Condition: Boolean; IsTrue, IsFalse: TObject): TObject;
-begin
-  if Condition then Result := IsTrue else Result := IsFalse;
-end;
-
-function IIF(Condition: Boolean; IsTrue, IsFalse: TValue): TValue;
-begin
-  if Condition then Result := IsTrue else Result := IsFalse;
 end;
 
 {$IF defined(DEBUG) and defined(MSWINDOWS)}
