@@ -123,7 +123,6 @@ var
   LTypedObj: TObject;
   LValueListObj: TIJX2ValueList;
   LSL: TStringList;
-  LObjListObj: TIJX2ObjList;
   LJsonObj: TJsonObject;
   LObjLoop: IJX2;
   LCurIntf: IJX2;
@@ -164,6 +163,7 @@ begin
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
+    LCurObj := nil;
     LJsonName := LField.Name;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;

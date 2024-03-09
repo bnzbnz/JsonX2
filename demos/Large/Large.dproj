@@ -109,6 +109,7 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
+        <DCC_DcuOutput>../../../</DCC_DcuOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -180,9 +181,7 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Large.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName="Large.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Large.exe" Configuration="Release" Class="ProjectOutput"/>
-                <DeployFile LocalName="Large.rsm" Configuration="Debug" Class="DebugSymbols"/>
                 <DeployFile LocalName="Large.rsm" Configuration="Debug" Class="DebugSymbols"/>
                 <DeployFile LocalName="Large" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Large" Configuration="Release" Class="ProjectOutput"/>

@@ -32,7 +32,7 @@ object Form2: TForm2
   end
   object OpenDialog1: TOpenDialog
     DefaultExt = 'json'
-    Filter = '*.json'
+    Filter = 'JSON|*.json'
     Left = 40
     Top = 73
   end
