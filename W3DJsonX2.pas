@@ -269,6 +269,7 @@ begin
           LSL.Add(ValueToJSONValue(LVal));
         aJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
+    Continue;
       end else
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarList then
@@ -280,6 +281,7 @@ begin
           LSL.Add(VariantToJSONValue(LVariant));
         aJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
+    Continue;
       end else
 {$ENDIF}
       if LCurObj.ClassType = TJX2ObjList then
@@ -297,6 +299,7 @@ begin
         LJsonObj.Free;
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('[' + LSL.DelimitedText + ']');
         LSL.Free;
+    Continue;
       end else
 
 {$IFNDEF JSX_NOVAR}
@@ -309,6 +312,7 @@ begin
           LSL.Add(StrToJSONValue(LStrVarDic.Key) + ':' + VariantToJSONValue(LStrVarDic.Value));
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
+    Continue;
       end
       else
 {$ENDIF}
@@ -322,6 +326,7 @@ begin
           LSL.Add(StrToJSONValue(LStrValue.Key) + ':' + ValueToJSONValue(LStrValue.Value));
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode('{' + LSL.DelimitedText + '}');
         LSL.Free;
+    Continue;
       end
       else
 
@@ -341,6 +346,7 @@ begin
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LJsonObj.Free;
         LSL.Free;
+    Continue;
       end else
 
 {$IFNDEF JSX_NOVAR}
@@ -360,6 +366,7 @@ begin
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LJsonObj.Free;
         LSL.Free;
+    Continue;
       end else
 {$ENDIF}
 
@@ -379,6 +386,7 @@ begin
         AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":{' + LSL.DelimitedText + '}', '"' + LJsonName + '":"', '"');
         LJsonObj.Free;
         LSL.Free;
+    Continue;
       end else
 
       begin
@@ -399,6 +407,7 @@ begin
         Serialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
         aJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode( LJsonObj.ToJSON(True) );
         LJsonObj.Free;
+        Continue;
       end;
 
       SetToNull(LJsonName, ASettings);
@@ -554,9 +563,10 @@ begin
         Serialize(LTypedObj, LJsonObj, AJsonPatcher, ASettings);
         AJsonObj.InternAddItem(LJsonName).Value := AJsonPatcher.Encode( LJsonObj.ToJSON(True));
         LJsonObj.Free;
-       end
+    Continue;
+    end else
 
-       else SetToNull(LJsonName, ASettings);
+      SetToNull(LJsonName, ASettings);
 
     end;
   end; // for LField in LFields do

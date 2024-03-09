@@ -511,11 +511,20 @@ end;
 
 destructor TIJX2.Destroy;
 var
-  Field: TRTTIField;
+  LField: TRTTIField;
+  LAttr: JX2AttrConv;
+  LAttrIntf: IJX2Converter;
 begin
-  for Field in W3DJsonX2.RTTI.GetFields(Self) do
-    if Field.FieldType.TypeKind in [tkClass] then
-      Field.GetValue(Self).AsObject.Free;
+  for LField in W3DJsonX2.RTTI.GetFields(Self) do
+    if LField.FieldType.TypeKind in [tkClass] then
+    begin
+      LAttr := JX2AttrConv(GetFieldAttribute(LField, JX2AttrConv));
+      if Assigned(LAttr) and Assigned(LAttr.FConv) then
+        if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
+          if (LField.GetValue(Self).AsObject <> nil) then
+            LAttrIntf.OnDestroy( TJX2DataBlock.Create([], LField.GetValue(Self).AsObject, LField) );
+      FreeAndNil(LField.GetValue(Self).AsObject);
+    end;
   inherited;
 end;
 

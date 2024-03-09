@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, System.TypInfo,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Memo.Types,
-  FMX.ScrollBox, FMX.Memo, FMX.Layouts, Activex
+  FMX.ScrollBox, FMX.Memo, FMX.Layouts
   {$IFNDEF JSX_NOVAR}
   , System.Variants
   {$ENDIF}
@@ -46,7 +46,7 @@ type
   ['{70DE2C9D-81FD-4524-B886-C48D71A6BEE0}']
  end;
 
-  TGenericInterfacedObject = class(TInterfacedObject, IGenericInterface)
+ TGenericInterfacedObject = class(TInterfacedObject, IGenericInterface)
     var AValue: Integer;
  end;
 
@@ -67,8 +67,8 @@ type
     [JX2AttrName('var1')]                                                       // Fvar1 field name will be mapped as json "var" name
     Fvar1: TValue;                                                              // Fvar1 varianle
   public
+    SubObjXXX: TSimpleSubObject;                                                      // an Object (TObject)
     var2: TValue;                                                               //  a TValue var2 variable
-    SubObj: TSimpleSubObject;                                                      // an Object (TObject)
     procedure SetVar1(v: TValue);                                               // Settet
     function GetVar1: TValue;                                                   // Getter
     property Var1: TValue read GetVar1 write SetVar1;                           // Property Var1
@@ -79,12 +79,11 @@ type
   end;
 
   // A complex object definitionr
+
   TComplexObj = class(TJX2)                                                     // inherit from TJX2)
   public
 
     // The fields order does not matter
-
-    VaRList: TJX2VarList;
 
     valNull: TValue;                                                            // null value
     valString: TValue;                                                          // string
@@ -99,21 +98,17 @@ type
     {$ENDIF}
     [JX2AttrName('type')]
     valType: TValue;                                                             // A TValue 'valType' mapped to Json 'type'
-
-                                                                                // Object and Interface definition
+                                                                            // Object and Interface definition
     ObjectType: TSimpleObject;
     [JX2AttrClass(TISimpleIntf)]                                               // The interfaced object of the interface
     IntfType: IJX2;
 
     {$IFNDEF JSX_NOVAR}                                                                            //List of values (array) :
-
-    [JX2AttrConv(TIJX2VariantListConv)]
-    VaRList2: TList<Variant>;
-                                                          // variant list
+    VaRList: TJX2VarList;
     {$ENDIF}
     VaLlist: TJX2ValueList;                                                     // TValue List
     [JX2AttrConv(TIJX2ValueListConv)]
-    VaLListWithConc: TList<TValue>;
+    VaLListWithConv: TList<TValue>;
 
 
     {$IFNDEF JSX_NOVAR}
@@ -162,7 +157,6 @@ type
 
 var
   Form2: TForm2;
-  bbb: TISimpleIntf;
 
 implementation
 uses DateUtils;
@@ -172,7 +166,7 @@ uses DateUtils;
 procedure TForm2.Button1Click(Sender: TObject);
 var
   Json, JsonBeauty: string;
-  Obj, CloneObj:  TComplexObj;
+  Obj, CloneObj, LObj:  TComplexObj;
   Simple: TSimpleObject;
   ISimple: TISimpleIntf;
   FS:  TFileStream;
@@ -191,29 +185,28 @@ begin
   //Primitives
 
   Obj.valNull := nil; // a Null (nil) value
-  Obj.valString := 'Value : ooŘaa鱇bb😃cc'; // a string UTF8
+  Obj.valString := 'Value : UTF8:Ř-鱇-😃'; // a string UTF8
   Obj.valInteger := 15; // an Integer
   Obj.valUTCDateTime := DateToIso8601( TTimeZone.Local.ToUniversalTime(Now) ); // an UTC ISO8601 DateTime (string);
   {$IFNDEF JSX_NOVAR}
-  Obj.valVariantString := 'Variant : ooŘaa鱇bb😃cc'; // variant string
+  Obj.valVariantString := 'Variant : UTF8:Ř-鱇-😃'; // variant string
   Obj.valBoolean := False;  // Boolean value
   Obj.valDouble := 2.2;     // Double value
   Obj.valDateTime := Double(Now); // Datetime: double value
   {$ENDIF}
   Obj.valType := 'erroneous delphi field name...'; // string of a renamed field
 
-
   // Object/Interface
 
   Obj.ObjectType := TSimpleObject.Create;
   Obj.ObjectType.var1 := 'a var 1 Object';
   Obj.ObjectType.var2 := 'a var 2 Object';
-  Obj.ObjectType.SubObj := TSimpleSubObject.Create;
-  Obj.ObjectType.SubObj.var3 := '3 SubObj';
-  Obj.ObjectType.SubObj.var4 := '4 SubObj';
+  Obj.ObjectType.SubObjXXX := TSimpleSubObject.Create;
+  Obj.ObjectType.SubObjXXX.var3 := '3 SubObj';
+  Obj.ObjectType.SubObjXXX.var4 := '4 SubObj';
 
-  Obj.IntfType := TISimpleIntf.Create;     // Use cloning for copying previous object, Inteface
-  TISimpleIntf(Obj.IntfType).var5 := 'a var 5 Intf';       // Set values :
+  Obj.IntfType := TISimpleIntf.Create;
+  TISimpleIntf(Obj.IntfType).var5 := 'a var 5 Intf';
 
   // Lists (arrays) of Var/Value/Obj
 
@@ -223,8 +216,13 @@ begin
   {$ENDIF}
 
   Obj.VaLlist := TJX2ValueList.Create;
-  Obj.VaLlist.Add(3);   Obj.VaLlist.Add(4);
+  Obj.VaLlist.Add(3);
+  Obj.VaLlist.Add(4);
 
+  Obj.VaLListWithConv := TList<TValue>.Create;
+  Obj.VaLListWithConv.Add('~44~');
+  Obj.VaLListWithConv.Add('~55~');
+  Obj.VaLListWithConv.Add('~66~');
 
   Obj.ObjList := TJX2ObjList.Create;
   Simple := TSimpleObject.Create;
@@ -232,13 +230,11 @@ begin
   Simple.var2 := 'five';
   TJX2ObjList(Obj.ObjList).Add(Simple);
 
-
   {$IFNDEF JSX_NOVAR}
   Obj.IVaRList := TIJX2VarList.Create;
   TIJX2VaRList(Obj.IVaRList).Add('6A');
   TIJX2VaRList(Obj.IVaRList).Add('7B');
   {$ENDIF}
-
 
   Obj.IVaLList := TIJX2ValueList.Create;
   TIJX2ValueList(Obj.IVaLList).Add('8C');
@@ -263,7 +259,6 @@ begin
   Obj.StrVarDic.Add('2', 12);
   {$ENDIF}
 
-
   Obj.StrObjDic := TJX2StrObjDic.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 'ValueKey';
@@ -285,7 +280,6 @@ begin
   ISimple.var5 := 'V1';
   TIJX2StrObjDic(Obj.IStrObjDic).Add('1', ISimple);
 
-
   Obj.TSL := TStringList.Create;
   Obj.TSL.Add('TSL value 1');
   Obj.TSL.Add('TSL value 2');
@@ -300,14 +294,12 @@ begin
   Obj.ConvVariantList.Add(456);
   {$ENDIF}
 
-
 //----------------------------------------------------------------------------//
-
 
   // Obj Serialization
 
   Json := W3DJX2.Beautifier(W3DJX2.Serialize(Obj, []), True);
-  Memo1.Lines.Add( 'Object (create file Beauty.json):');
+  Memo1.Lines.Add( 'Object Creation (and generate Beauty.json file), Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
   FS := TFileStream.Create('Beauty.json', fmCreate);
@@ -317,20 +309,20 @@ begin
   // Cloning through serialization
   CloneObj := W3DJX2.Deserialize<TComplexObj>(Json, []);
   Json := W3DJX2.Beautifier(W3DJX2.Serialize(CloneObj, []), True);
-  Memo1.Lines.Add( 'Cloned Object (Json Des/Ser):');
+  Memo1.Lines.Add( 'Cloned Object (Json Des/Ser), New Cloned Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
-  Memo1.Lines.Add( 'Natively Cloned Object :');
+  Memo1.Lines.Add( 'Natively Cloned Object, New Cloned Object is :');
   Json := W3DJX2.Beautifier(W3DJX2.Serialize(CloneObj), True);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
-  JsonBeauty := W3DJX2.Beautifier(Json, False);
+  // so Beautyful !!! :)
   Memo2.Lines.Add('Json Beautifier :');
-  Memo2.Lines.Add(JsonBeauty);
+  Memo2.Lines.Add( W3DJX2.Beautifier(Json, False) );
 
 //----------------------------------------------------------------------------//
 
@@ -349,7 +341,7 @@ begin
 
   Memo3.Lines.Add('VaLlist : ');
   for var i in Obj.VaLlist do
-    Memo3.Lines.Add('  ' + IntToStr(i.AsInteger));
+    Memo3.Lines.Add('    ' + IntToStr(i.AsInteger));
 
   Memo3.Lines.Add('IVaLlist : ');
   for var i in TIJX2ValueList(Obj.IVaLlist) do
@@ -359,24 +351,24 @@ begin
   for var i in TJX2ObjList(Obj.ObjList) do
   begin
     var O := TSimpleObject(i);
-    Memo3.Lines.Add('  ObjectType.var1: ' + o.var1.ToString);
+    Memo3.Lines.Add('    ObjectType.var1: ' + o.var1.ToString);
   end;
 
   Memo3.Lines.Add('StrValueDic : ');
   for var i in TJX2StrValueDic(Obj.StrValueDic) do
-    Memo3.Lines.Add(' ' + i.Key + ': ' + IntToStr(TValue(i.Value).asInteger));
+    Memo3.Lines.Add('   ' + i.Key + ': ' + IntToStr(TValue(i.Value).asInteger));
 
   Memo3.Lines.Add('StrObjDic : ');
   for var i in TJX2StrObjDic(Obj.StrObjDic) do
   begin
     var o := TSimpleObject(i.Value);
-    Memo3.Lines.Add(' ' + i.Key + ' : ' + o.var1.AsString + ', ' + o.var2.AsString);
+    Memo3.Lines.Add('   ' + i.Key + ' : ' + o.var1.AsString + ', ' + o.var2.AsString);
   end;
 
 //----------------------------------------------------------------------------//
 
-  Memo1.Lines.Add('Read Json file (Beauty.json)');
-  Memo4.Lines.Add('Read Json file (Beauty.json)');
+  Memo1.Lines.Add('Read Json from geerated file (Beauty.json)');
+  Memo4.Lines.Add('Read Json from geerated file (Beauty.json)');
   FS := TFileStream.Create('Beauty.json', fmOpenRead + fmShareDenyNone);
   Json := FS.ReadRawString(TEncoding.UTF8);
   FS.Free;
@@ -384,6 +376,12 @@ begin
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   Memo4.Lines.Add( W3DJX2.Beautifier(Json) );
 
+  Memo1.Lines.Add('Deserialize Object from Beauty.json, New Object is :');
+  LObj := W3DJX2.Deserialize<TComplexObj>(Json);
+  Json :=  W3DJX2.Beautifier(W3DJX2.Serialize(LObj), True);
+  Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
+
+  LObj.Free;
   Obj.Free;
 
 end;
