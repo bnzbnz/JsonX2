@@ -47,8 +47,6 @@ const
 
 type
 
-  // JsonX2Patcher
-
   TJsonX2 = class(TObject)
   public
     class var FInstance: TJsonX2;
@@ -103,7 +101,7 @@ procedure  TJsonX2.Serialize(
 var
 
   {$IFNDEF JSX_NOVAR}
-  LV: variant;
+  LVariant: variant;
   Lvar: variant;
   LVarLoop: variant;
   LStrVarDic: TPair<string, Variant>;
@@ -174,26 +172,26 @@ begin
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
-      LV := LField.GetValue(AObj).AsVariant;
-      case FindVarData(LV)^.VType of
+      LVariant := LField.GetValue(AObj).AsVariant;
+      case FindVarData(LVariant)^.VType of
         varEmpty:
           SetToNull(LJsonName, ASettings);
         varNull:
           AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
         varOleStr, varString, varUString:
-          AJsonObj.InternAddItem(LJsonName).Value := LV;
+          AJsonObj.InternAddItem(LJsonName).Value := LVariant;
         varSmallInt, varInteger, varShortInt, varByte, varWord, varLongWord:
-          AJsonObj.InternAddItem(LJsonName).IntValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).IntValue := LVariant;
         varDate:
-          AJsonObj.InternAddItem(LJsonName).DateTimeValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).DateTimeValue := (LVariant);
         varBoolean:
-          AJsonObj.InternAddItem(LJsonName).BoolValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).BoolValue := (LVariant);
         varInt64:
-          AJsonObj.InternAddItem(LJsonName).LongValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).LongValue := (LVariant);
         varUInt64:
-          AJsonObj.InternAddItem(LJsonName).ULongValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).ULongValue := (LVariant);
         varSingle, varDouble, varCurrency:
-          AJsonObj.InternAddItem(LJsonName).FloatValue := (LV);
+          AJsonObj.InternAddItem(LJsonName).FloatValue := (LVariant);
       else
         SetToNull(LJsonName, ASettings);
       end;
@@ -278,8 +276,8 @@ begin
         LVarListClass := TJX2VarList(LCurObj);
         LSL := TStringList.Create(#0, ',', [soStrictDelimiter]);
         LSL.Capacity := LVarListClass.count + 1;
-        for LV in LVarListClass do
-          LSL.Add(VariantToJSONValue(LV));
+        for LVariant in LVarListClass do
+          LSL.Add(VariantToJSONValue(LVariant));
         aJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode('"' + LJsonName + '":[' + LSL.DelimitedText + ']', '"' + LJsonName + '":"', '"');
         LSL.Free;
       end else
@@ -406,6 +404,7 @@ begin
       SetToNull(LJsonName, ASettings);
       Continue;
     end else
+
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
       if LField.GetValue(AObj).AsInterface = Nil then begin SetToNull(LJsonName, ASettings); Continue; end;
@@ -451,11 +450,11 @@ begin
 {$ENDIF}
       if Supports(LTypedObj, IJX2ObjList) then
       begin
-        LObjListObj := TIJX2ObjList(LTypedObj);
+
         LSL := TStringList.Create(#0, ',', [soStrictDelimiter]);
-        LSL.Capacity := LObjListObj.count;
+        LSL.Capacity := TIJX2ObjList(LTypedObj).Count;
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        for LObjLoop in LObjListObj do
+        for LObjLoop in TIJX2ObjList(LTypedObj) do
         begin
           LJsonObj.Clear;
           Serialize(TObject(LObjLoop), LJsonObj, AJsonPatcher, ASettings);
@@ -634,12 +633,12 @@ var
   LAttr: TCustomAttribute;
   LAttrIntf: IJX2Converter;
 
-  function GetFieldName(const AJsonName: string; var AExplicit: Boolean): TRTTIField;
+  function GetFieldName(AFields: TArray<TRTTIField>; const AJsonName: string; var AExplicit: Boolean): TRTTIField; inline;
   var
     AAttr: JX2AttrName;
   begin
     AExplicit := False;
-    for Result in LFields do
+    for Result in AFields do
     begin
       AAttr := JX2AttrName(GetFieldAttribute(Result, JX2AttrName));
       AExplicit := (AAttr <> Nil) and (AAttr.FName = AJsonName);
@@ -656,7 +655,7 @@ begin
   begin
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
-    LRTTIField := GetFieldName(LJName, LExplicit);
+    LRTTIField := GetFieldName(LFields, LJName, LExplicit);
     if LRTTIField = Nil then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicit then Continue;
     {$IFNDEF JSX_NOVAR}
@@ -760,7 +759,6 @@ begin
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
-        if (LJValue.IsNull) then Continue;
         LNewObjList := TJX2ObjList.Create(True);
         LRTTIField.SetValue(aObj, LNewObjList);
         LNewObjList.Capacity := LJValue.ArrayValue.Count;
