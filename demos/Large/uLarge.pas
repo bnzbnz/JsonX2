@@ -39,14 +39,11 @@ type
     [JX2AttrClass(FvalueConst)]
     valueConstraints : TJX2ObjList;
     applicableForLocalizedAspectName: TValue;
-    [JX2AttrConv(TIJX2ValueListConv)]
-    applicableForLocalizedAspectValues: TList<TValue>;
+    applicableForLocalizedAspectValues: TJX2ValueList
   end;
 
   TFaspectValues = class(TJX2)
     localizedValue: TValue;
-    //[JX2AttrConv(TIJX2ObjectListConv, FvalueConstraint)]
-    //valueConstraints: TObjectList<TObject>;
     [JX2AttrClass(FvalueConstraint)]
     valueConstraints: TJX2ObjList;
   end;
@@ -72,8 +69,8 @@ type
   TcategoryAspect = class(TJX2)
     localizedAspectName: TValue;
     aspectConstraint: TaspectConstraint;
-    [JX2AttrConv(TIJX2ObjectListConv, TFaspectValues)]
-    aspectValues: TObjectList<TObject>;
+    [JX2AttrClass(TFaspectValues)]
+    aspectValues: TJX2ObjList;
   end;
 
   TcategoryAspects = class(TJX2)
@@ -86,9 +83,13 @@ type
   public
     categoryTreeId: TValue;
     categoryTreeVersion: TValue;
-    [JX2AttrConv(TIJX2ObjectListConv, TcategoryAspects)]  //Using a std Object List converter
-    categoryAspects: TObjectList<TObject>;
+    [JX2AttrClass(TcategoryAspects)]  // Using a predefined Object List
+    categoryAspects: TJX2ObjList;
   end;
+
+  TObjectConstructor = function : TObject;
+
+
 
 var
   Form2: TForm2;
@@ -97,13 +98,12 @@ implementation
 uses System.Diagnostics;
 
 {$R *.fmx}
-
 procedure TForm2.Button1Click(Sender: TObject);
 var
   Sw: TStopWatch;
-  Obj: TfetchItemAspectsContentType;
+  Obj : TfetchItemAspectsContentType;
 begin
-  Obj := nil;
+ Obj := nil;
   try
     OpenDialog1.InitialDir := ExtractFilePath( ParamStr(0) );
     if not OpenDialog1.Execute then Exit;
@@ -114,16 +114,18 @@ begin
     Memo1.Lines.Add('Read in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;
     Obj := W3DJX2.Deserialize<TfetchItemAspectsContentType>(Json, []);
-    Sw.Stop;
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
-    Sw.Start;
+    SW.Stop; Sw.Start;
     var AspectValueCount: Integer;
     if assigned(Obj.categoryAspects) then for var i in Obj.categoryAspects do
       if assigned(TcategoryAspects(i).aspects) then for var t in TcategoryAspects(i).aspects do
         if assigned(TcategoryAspect(t).aspectValues) then for var j in TcategoryAspect(t).aspectValues do
           Inc(AspectValueCount);
     Memo1.Lines.Add('eBay Aspect values : ' + AspectValueCount.ToString + ' (TObject Created)');
-    Sw.Stop;
+    Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
+      Sw.Stop;   Sw.Start;
+    (W3DJX2.Serialize(Obj));
+
     Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
   finally
     Obj.Free;

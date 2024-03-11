@@ -11,7 +11,8 @@ uses
   W3DCloneable in '..\..\W3DCloneable.pas',
   uMain in 'uMain.pas' {Form2},
   W3DJsonX2.Conv in '..\..\W3DJsonX2.Conv.pas',
-  W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas';
+  W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas',
+  W3DJsonX2.Pool in '..\..\W3DJsonX2.Pool.pas';
 
 {$R *.res}
 

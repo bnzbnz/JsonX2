@@ -5164,7 +5164,9 @@ var
   PropList: PPropList;
   PropType: PTypeInfo;
   PropName: string;
+  {$IFNDEF JSX_NOVAR}
   V: Variant;
+  {$ENDIF}
   D: Double;
   Ch: Char;
 begin

@@ -107,9 +107,6 @@ type
     VaRList: TJX2VarList;
     {$ENDIF}
     VaLlist: TJX2ValueList;                                                     // TValue List
-    [JX2AttrConv(TIJX2ValueListConv)]
-    VaLListWithConv: TList<TValue>;
-
 
     {$IFNDEF JSX_NOVAR}
     [JX2AttrClass(TIJX2VaRList)]                                                // Object mapped to the variant list interface
@@ -142,14 +139,6 @@ type
 
     //Generic Object/Inteface CallBack Converter
 
-    {$IFNDEF JSX_NOVAR}
-    [JX2AttrConv(TIJX2VariantListConv)]
-    ConvVariantList: TList<Variant>;
-    {$ENDIF}
-
-    [JX2AttrConv(TIJX2ValueListConv)]
-    ConvValueList: TList<TValue>;
-
     [JX2AttrConv(TIStringListConv)]
     TSL: TStringList;
 
@@ -165,7 +154,7 @@ uses DateUtils;
 
 procedure TForm2.Button1Click(Sender: TObject);
 var
-  Json, JsonBeauty: string;
+  Json: string;
   Obj, CloneObj, LObj:  TComplexObj;
   Simple: TSimpleObject;
   ISimple: TISimpleIntf;
@@ -187,8 +176,8 @@ begin
   Obj.valNull := nil; // a Null (nil) value
   Obj.valString := 'Value : UTF8:Ř-鱇-😃'; // a string UTF8
   Obj.valInteger := 15; // an Integer
-  Obj.valUTCDateTime := DateToIso8601( TTimeZone.Local.ToUniversalTime(Now) ); // an UTC ISO8601 DateTime (string);
   {$IFNDEF JSX_NOVAR}
+  Obj.valUTCDateTime := DateToIso8601( TTimeZone.Local.ToUniversalTime(Now) ); // an UTC ISO8601 DateTime (string);
   Obj.valVariantString := 'Variant : UTF8:Ř-鱇-😃'; // variant string
   Obj.valBoolean := False;  // Boolean value
   Obj.valDouble := 2.2;     // Double value
@@ -212,22 +201,22 @@ begin
 
   {$IFNDEF JSX_NOVAR}
   Obj.VaRList := TJX2VarList.Create;
-  Obj.VaRList.Add(1);   Obj.VaRList.Add(2);
+  Obj.VaRList.Add(11);   Obj.VaRList.Add('22');
   {$ENDIF}
 
   Obj.VaLlist := TJX2ValueList.Create;
   Obj.VaLlist.Add(3);
   Obj.VaLlist.Add(4);
 
-  Obj.VaLListWithConv := TList<TValue>.Create;
-  Obj.VaLListWithConv.Add('~44~');
-  Obj.VaLListWithConv.Add('~55~');
-  Obj.VaLListWithConv.Add('~66~');
 
   Obj.ObjList := TJX2ObjList.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 5;
   Simple.var2 := 'five';
+  TJX2ObjList(Obj.ObjList).Add(Simple);
+  Simple := TSimpleObject.Create;
+  Simple.var1 := 6;
+  Simple.var2 := 'six';
   TJX2ObjList(Obj.ObjList).Add(Simple);
 
   {$IFNDEF JSX_NOVAR}
@@ -261,9 +250,13 @@ begin
 
   Obj.StrObjDic := TJX2StrObjDic.Create;
   Simple := TSimpleObject.Create;
-  Simple.var1 := 'ValueKey';
-  Simple.var2 := 'ObjValue ''V2/''/ escaped';
+  Simple.var1 := 'ValueKey 2';
+  Simple.var2 := 'ObjValue 2';
   Obj.StrObjDic.Add('Key1', Simple);
+  Simple := TSimpleObject.Create;
+  Simple.var1 := 'ValueKey 2';
+  Simple.var2 := 'ObjValue 2';
+  Obj.StrObjDic.Add('Key2', Simple);
 
   {$IFNDEF JSX_NOVAR}
   Obj.IStrVarDic := TIJX2StrVarDic.Create;
@@ -283,16 +276,6 @@ begin
   Obj.TSL := TStringList.Create;
   Obj.TSL.Add('TSL value 1');
   Obj.TSL.Add('TSL value 2');
-
-  Obj.ConvValueList := TList<TValue>.Create;
-  Obj.ConvValueList.Add('AAA');
-  Obj.ConvValueList.Add(123);
-
-  {$IFNDEF JSX_NOVAR}
-  Obj.ConvVariantList := TList<Variant>.Create;
-  Obj.ConvVariantList.Add('BBB');
-  Obj.ConvVariantList.Add(456);
-  {$ENDIF}
 
 //----------------------------------------------------------------------------//
 
@@ -333,8 +316,8 @@ begin
   {$IFNDEF JSX_NOVAR}
   Memo3.Lines.Add('String (Variant): ' + Obj.valVariantString);
   Memo3.Lines.Add('Double: ' + FloatToStr(Obj.valDouble));
-  {$ENDIF}
   Memo3.Lines.Add('UTC: ' + Obj.valUTCDateTime);
+ {$ENDIF}
 
   Memo3.Lines.Add('ObjectType.var1: ' + Obj.ObjectType.Var1.ToString);
   Memo3.Lines.Add('IntfType.var1: ' + TISimpleIntf(Obj.IntfType).Var5.ToString());

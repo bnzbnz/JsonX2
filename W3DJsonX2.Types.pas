@@ -73,9 +73,9 @@ type
 
   IJX2Converter = interface(IInterface)
     ['{A8023240-7045-4CA8-8773-A202B369910B}']
+    function  OnClone(AData: TJX2DataBlock): TObject;
     function  OnSerialize(AData: TJX2DataBlock): string;
     function  OnDeserialize(AData: TJX2DataBlock) : TObject;
-    function  OnClone(AData: TJX2DataBlock): TObject;
     procedure OnDestroy(AData: TJX2DataBlock);
   end;
 
@@ -209,40 +209,6 @@ type
     function Clone: IW3DCloneable;
   end;
 
-  IJX2ValueObjDic = Interface
-  ['{EEFCBBEC-C695-4FEB-9F43-745D1AB20A3D}']
-  end;
-
-  TIJX2ValueObjDic = class(TObjectDictionary<TValue, IJX2>, IJX2ValueObjDic, IJX2)
-   protected
-    FRefCount: Integer;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  public
-    function CloneSelf: IJX2;
-    procedure CloneTo(ADestIntf: IJX2);
-    function Clone: IW3DCloneable;
-  end;
-
-  IJX2VarObjDic = Interface
-  ['{6450B27F-3F2F-4079-8EC1-42AF868D3408}']
-  end;
-
-  {$IFNDEF JSX_NOVAR}
-  TIJX2VarObjDic = class(TObjectDictionary<Variant, IJX2>, IJX2VarObjDic, IJX2)
-   protected
-    FRefCount: Integer;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-  public
-    function CloneSelf: IJX2;
-    procedure CloneTo(ADestIntf: IJX2);
-    function Clone: IW3DCloneable;
-  end;
-  {$ENDIF}
-
   IJX2StrObjDic = Interface
   ['{587F5F53-976C-48E6-95E1-E7331390E727}']
   end;
@@ -292,18 +258,6 @@ type
   TJX2StrValueDic = class(TDictionary<string, TValue>)
     function Clone: TJX2StrValueDic;
   end;
-
-  TJX2ValueObjDic = class(TObjectDictionary<TValue, TObject>)  // Requires AJsonXClassType Attribute(Object class type)
-    constructor Create; overload;
-    function Clone: TJX2ValueObjDic;
-  end;
-
-  {$IFNDEF JSX_NOVAR}
-  TJX2VarObjDic = class(TObjectDictionary<variant, TObject>)  // Requires AJsonXClassType Attribute(Object class type)
-    constructor Create; overload;
-    function Clone: TJX2VarObjDic;
-  end;
-  {$ENDIF}
 
   TJX2StrObjDic = class(TObjectDictionary<string, TObject>)  // Requires AJsonXClassType Attribute(Object class type)
     constructor Create; overload;
@@ -395,16 +349,8 @@ begin
       if LInstance.MetaclassType = TJX2StrValueDic then
         AField.SetValue(ADest, TJX2StrValueDic(LObj).Clone)
       else
-      {$IFNDEF JSX_NOVAR}
-      if LInstance.MetaclassType = TJX2VarObjDic then
-        AField.SetValue(ADest, TJX2VarObjDic(LObj).Clone)
-      else
-      {$ENDIF}
       if LInstance.MetaclassType = TJX2ValueList then
         AField.SetValue(ADest, TJX2ValueList(LObj).Clone)
-      else
-      if LInstance.MetaclassType = TJX2ValueObjDic then
-        AField.SetValue(ADest, TJX2ValueObjDic(LObj).Clone)
       else
       if LInstance.MetaclassType = TJX2StrObjDic then
         AField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
@@ -465,24 +411,12 @@ begin
       if Supports(LObj, IJX2StrVarDic) then
         AField.SetValue(ADest, TValue.From<IJX2StrVarDic>(IJX2StrVarDic(TIJX2StrVarDic(LObj).Clone)))
       else
-      if Supports(LObj, IJX2VarObjDic) then
-        AField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic(LObj).Clone)))
-      else
-      if Supports(LObj, IJX2VarObjDic) then
-        AField.SetValue(ADest, TValue.From<IJX2VarObjDic>(IJX2VarObjDic(TIJX2VarObjDic(LObj).Clone)))
-      else
       {$ENDIF}
       if Supports(LObj, IJX2ObjList) then
         AField.SetValue(ADest, TValue.From<IJX2ObjList>(IJX2ObjList(TIJX2ObjList(LObj).Clone)))
       else
       if Supports(LObj, IJX2ValueList) then
         AField.SetValue(ADest, TValue.From<IJX2ValueList>(IJX2ValueList(TIJX2ValueList(LObj).Clone)))
-      else
-      if Supports(LObj, IJX2ValueObjDic) then
-        AField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic(LObj).Clone)))
-      else
-      if Supports(LObj, IJX2ValueObjDic) then
-        AField.SetValue(ADest, TValue.From<IJX2ValueObjDic>(IJX2ValueObjDic(TIJX2ValueObjDic(LObj).Clone)))
       else
       if Supports(LObj, IJX2StrValueDic) then
         AField.SetValue(ADest, TValue.From<IJX2StrValueDic>(IJX2StrValueDic(TIJX2StrValueDic(LObj).Clone)))
@@ -683,49 +617,6 @@ end;
 
   {$ENDREGION 'TIJX2VarList'}
 
-  {$REGION 'TIJX2VarObjDic'}
-
-function TIJX2VarObjDic.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  if GetInterface(IID, Obj) then
-    Result := 0
-  else
-    Result := E_NOINTERFACE;
-end;
-
-function TIJX2VarObjDic._AddRef: Integer;
-begin
-  Result := AtomicIncrement(FRefCount);
-end;
-
-function TIJX2VarObjDic._Release: Integer;
-begin
-  Result := AtomicDecrement(FRefCount);
-  if Result = 0 then
-    Destroy;
-end;
-
-function TIJX2VarObjDic.Clone: IW3DCloneable;
-begin
-  Result := CloneSelf;
-end;
-
-function TIJX2VarObjDic.CloneSelf: IJX2;
-begin
-  Result := IJX2(TIJX2VarObjDic.Create);
-  IJX2(Self).CloneTo(Result);
-end;
-
-procedure TIJX2VarObjDic.CloneTo(ADestIntf: IJX2);
-var
-  Lkv: TPair<Variant, IJX2>;
-begin
-  for Lkv in Self do
-    TIJX2VarObjDic(ADestIntf).Add(Lkv.Key, TIJX2(Lkv.Value).CloneSelf);
-end;
-
-{$ENDREGION
- 'TIJX2VarObjDic'}
 {$ENDIF}
   {$REGION 'TIJX2ObjList'}
 
@@ -814,49 +705,6 @@ begin
 end;
 
   {$ENDREGION 'TIJX2StrValueDic'}
-
-  {$REGION 'TIJX2ValueObjDic'}
-
-function TIJX2ValueObjDic.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  if GetInterface(IID, Obj) then
-    Result := 0
-  else
-    Result := E_NOINTERFACE;
-end;
-
-function TIJX2ValueObjDic._AddRef: Integer;
-begin
-  Result := AtomicIncrement(FRefCount);
-end;
-
-function TIJX2ValueObjDic._Release: Integer;
-begin
-  Result := AtomicDecrement(FRefCount);
-  if Result = 0 then
-    Destroy;
-end;
-
-function TIJX2ValueObjDic.Clone: IW3DCloneable;
-begin
-  Result := CloneSelf;
-end;
-
-function TIJX2ValueObjDic.CloneSelf: IJX2;
-begin
-  Result := IJX2(TIJX2ValueObjDic.Create);
-  IJX2(Self).CloneTo(Result);
-end;
-
-procedure TIJX2ValueObjDic.CloneTo(ADestIntf: IJX2);
-var
-  Lkv: TPair<TValue, IJX2>;
-begin
-  for Lkv in Self do
-    TIJX2ValueObjDic(ADestIntf).Add(Lkv.Key, TIJX2(Lkv.Value).CloneSelf);
-end;
-
-  {$ENDREGION 'TIJX2ValueObjDic'}
 
   {$REGION 'TIJX2StrObjDic'}
 
@@ -950,20 +798,6 @@ begin
   for Lkv in Self do Result.Add(Lkv.Key, Lkv.Value);
 end;
 
-{$IFNDEF JSX_NOVAR}
-function TJX2VarObjDic.Clone: TJX2VarObjDic;
-var
-  Lkv: TPair<Variant, TObject>;
-begin
-  Result := TJX2VarObjDic.Create([doOwnsValues]);
-  for Lkv in Self do
-    if Assigned(Lkv.Value) then
-      Result.Add(Lkv.Key, TJX2(Lkv.Value).Clone)
-    else
-      Result.Add(Lkv.Key, Nil);
-end;
-{$ENDIF}
-
 function TJX2StrObjDic.Clone: TJX2StrObjDic;
 var
   Lkv: TPair<string, TObject>;
@@ -975,30 +809,6 @@ begin
     else
       Result.Add(Lkv.Key, Nil);
 end;
-
-function TJX2ValueObjDic.Clone: TJX2ValueObjDic;
-var
-  Lkv: TPair<TValue, TObject>;
-begin
-  Result := TJX2ValueObjDic.Create([doOwnsValues]);
-  for Lkv in Self do
-    if Assigned(Lkv.Value) then
-      Result.Add(Lkv.Key, TJX2(Lkv.Value).Clone)
-    else
-      Result.Add(Lkv.Key, Nil);
-end;
-
-constructor TJX2ValueObjDic.Create;
-begin
-  inherited Create([doOwnsValues]);
-end;
-
-{$IFNDEF JSX_NOVAR}
-constructor TJX2VarObjDic.Create;
-begin
-  inherited Create([doOwnsValues]);
-end;
-{$ENDIF}
 
 constructor TJX2StrObjDic.Create;
 begin
