@@ -47,6 +47,7 @@ type
     jxExplicitBinding           // Serialize/Deserialize only fields having an explicit JX2AttrName attribute
     , jxoRaiseException         // Re-raise exception instead of an empty result;
     , jxoReturnEmptyJsonString  // Serialize: return an empty string instead of '{}' when the object is empty
+    , jxoNullify                // Serialize empty fields as null, if not they are removed
   );
   TJX2Settings = set of TJX2Setting;
 

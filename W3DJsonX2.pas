@@ -292,7 +292,7 @@ var
   LStrObjLoopClass: TPair<string, TObject>;
   LTValue: TValue;
   LDouble: Double;
-  LErrorMsgType: string;
+  LSuccess: Boolean;
   LAttrIntf: IJX2Converter;
 
 
@@ -322,10 +322,11 @@ begin
     begin
       LVariant := LField.GetValue(AObj).AsVariant;
       case FindVarData(LVariant)^.VType of
-        varEmpty:
-          SetToNull(LJsonName, ASettings);
-        varNull:
-          AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
+        varEmpty, varNull:
+          begin
+            if not (jxoNullify in ASettings) then Continue;
+            AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
+          end;
         varOleStr, varString, varUString:
           AJsonObj.InternAddItem(LJsonName).Value := LVariant;
         varSmallInt, varInteger, varShortInt, varByte, varWord, varLongWord:
@@ -341,7 +342,8 @@ begin
         varSingle, varDouble, varCurrency:
           AJsonObj.InternAddItem(LJsonName).FloatValue := (LVariant);
       else
-        SetToNull(LJsonName, ASettings);
+        if not (jxoNullify in ASettings) then Continue;
+        AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
       end;
       Continue;
     end else
@@ -350,15 +352,10 @@ begin
     begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
       begin
-        if not LField.GetValue(AObj).TryAsType<TValue>(LTValue) then
-          Continue;
-        LErrorMsgType := '';
+        if not LField.GetValue(AObj).TryAsType<TValue>(LTValue) then Continue;
+        LSuccess := True;
         case LTValue.Kind of
-          tkUnknown:
-            begin
-              //if not (jxoUnassignedToNull in ASettings) then Continue;
-              AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
-            end;
+          tkUnknown: LSuccess := False;
           tkInteger: AJsonObj.InternAddItem(LJsonName).IntValue := LTValue.AsInteger;
           tkChar: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkEnumeration:
@@ -372,9 +369,9 @@ begin
               AJsonObj.InternAddItem(LJsonName).FloatValue := LDouble;
             end;
           tkString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
-          tkSet: LErrorMsgType := 'tkSet';
-          tkClass: LErrorMsgType := 'tkClass';
-          tkMethod: LErrorMsgType := 'tkMethod';
+          tkSet: LSuccess := False;
+          tkClass: LSuccess := False;
+          tkMethod: LSuccess := False;
           tkWChar: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkLString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkWString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
@@ -385,20 +382,22 @@ begin
               AJsonObj.InternAddItem(LJsonName).VariantValue := LVar;
             end;
           {$ENDIF}
-          tkArray: LErrorMsgType := 'tkArray';
-          tkRecord: LErrorMsgType := 'tkRecord';
-          tkInterface: LErrorMsgType := 'tkInterface';
+          tkArray: LSuccess := False;
+          tkRecord: LSuccess := False;
+          tkInterface: LSuccess := False;
           tkInt64: AJsonObj.InternAddItem(LJsonName).LongValue := LTValue.AsInt64;
-          tkDynArray: LErrorMsgType := 'tkDynArray';
+          tkDynArray: LSuccess := False;
           tkUString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
-          tkClassRef: LErrorMsgType := 'tkClassRef';
-          tkPointer: LErrorMsgType := 'tkPointer';
-          tkProcedure: LErrorMsgType := 'tkProcedure';
-          tkMRecord: LErrorMsgType := 'tkMRecord';
+          tkClassRef: LSuccess := False;
+          tkPointer: LSuccess := False;
+          tkProcedure: LSuccess := False;
+          tkMRecord: LSuccess := False;
         end;
-        if LErrorMsgType <> '' then
-          raise Exception.Create(Format('Serialize TValue ( %s ) id %s !', [LJsonName, LErrorMsgType]));
-
+        if not LSuccess then
+        begin
+          if not (jxoNullify in ASettings) then Continue;
+          AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+        end;
       end;
       Continue;
     end else
@@ -406,7 +405,12 @@ begin
     if LField.FieldType.TypeKind in [tkClass] then
     begin
       LCurObj := LField.GetValue(AObj).AsObject;
-      if LCurObj = Nil then begin SetToNull(LJsonName, ASettings); Continue; end;
+      if LCurObj = Nil then
+      begin
+        if not (jxoNullify in ASettings) then Continue;
+        AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+        Continue;
+      end;
 
       if LCurObj.ClassType = TJX2ValueList then
       begin
@@ -457,7 +461,6 @@ begin
         for LStrVarDic in LObjStrVarDic do
           SetJsonVariant(LJsonObj.AddItem(LStrVarDic.Key), LStrVarDic.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
-        ff
     Continue;
       end
       else
