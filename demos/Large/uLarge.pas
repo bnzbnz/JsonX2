@@ -102,30 +102,30 @@ procedure TForm2.Button1Click(Sender: TObject);
 var
   Sw: TStopWatch;
   Obj : TfetchItemAspectsContentType;
+  Json: string;
 begin
- Obj := nil;
+  Obj := nil;
   try
     OpenDialog1.InitialDir := ExtractFilePath( ParamStr(0) );
     if not OpenDialog1.Execute then Exit;
     Sw := TStopWatch.StartNew;
     Memo1.Lines.Add('Filename : ' + OpenDialog1.Filename);
-    var Json := LoadStringFromFile(OpenDialog1.Filename, TEncoding.ANSI);
+    Json := LoadStringFromFile(OpenDialog1.Filename, TEncoding.UTF8);
     SW.Stop;
     Memo1.Lines.Add('Read in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
-    Sw.Start;
+    SW.Start;
     Obj := W3DJX2.Deserialize<TfetchItemAspectsContentType>(Json);
+    Sw.Stop;
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
-    SW.Stop; Sw.Start;
     var AspectValueCount: Integer;
     if assigned(Obj.categoryAspects) then for var i in Obj.categoryAspects do
       if assigned(TcategoryAspects(i).aspects) then for var t in TcategoryAspects(i).aspects do
         if assigned(TcategoryAspect(t).aspectValues) then for var j in TcategoryAspect(t).aspectValues do
           Inc(AspectValueCount);
-    Memo1.Lines.Add('eBay Aspect values : ' + AspectValueCount.ToString + ' (TObject Created)');
-    Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
-      Sw.Stop;   Sw.Start;
-    SaveStringToFile('Json.json', W3DJX2.Serialize(Obj, []) );
-    Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
+    Memo1.Lines.Add('eBay Aspect values count : ' + AspectValueCount.ToString + ' (TObject Created)');
+    SW.Start;
+    SaveStringToFile('Json.json', W3DJX2.Serialize(Obj, []), TEncoding.UTF8 );
+    Memo1.Lines.Add(' From Json to File :' + Sw.ElapsedMilliseconds.ToString + 'ms');
   finally
     Obj.Free;
   end;

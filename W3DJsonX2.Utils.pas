@@ -43,12 +43,13 @@ type
     function ReadRawString(Encoding: TEncoding): string;
     function ToStringStream(DefaultString: string;  Encoding: TEncoding): TStringStream;
     function ToString(Encoding: TEncoding): string; overload;
+    function FromString(const Str: string; Encoding: TEncoding): Int64;
   end;
   // HTTP
   function  URLEncode(const ToEncode: string): string;
   // Strings
   function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
-  function  SaveStringToFile(Filename: string;  Str: string): Integer;
+  function SaveStringToFile(Filename: string; Str: string; Encoding: TEncoding): Integer;
   // Tools
   function  StringGUID: string;
   function  DelphiGUID: string;
@@ -145,11 +146,11 @@ end;
 
 function TStreamHelper.WriteRawUnicodeString(Str: string): Integer;
 begin
-  REsult :=  Length(Str) * SizeOf(Char);
+  Result :=  Length(Str) * SizeOf(Char);
   Self.Write(Str[1], Result);
 end;
 
-function TStreamHelper.ReadRawString( Encoding: TEncoding ): string;
+function TStreamHelper.ReadRawString(Encoding: TEncoding): string;
 var
   StringBytes: TBytes;
   OPs: Int64;
@@ -172,6 +173,15 @@ begin
   SS.CopyFrom(Self, -1);
   Result := SS.DataString;
   Self.Position := OPs;
+  SS.Free;
+end;
+
+function TStreamHelper.FromString(const Str: string; Encoding: TEncoding): Int64;
+var
+  SS: TStringStream;
+begin
+  SS := TStringStream.Create(Str, Encoding);
+  Result := Self.CopyFrom(SS, -1);
   SS.Free;
 end;
 
@@ -206,22 +216,24 @@ function LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
 var
   FS : TFileStream;
 begin
+  FS := nil;
   Result := '';
-  FS := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
   try
-    Result := FS.ReadRawString(Encoding);
+    FS := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
+    Result := FS.ToString(Encoding);
   finally
     FS.Free;
   end;
 end;
 
-function SaveStringToFile(Filename: string; Str: String): Integer;
+function SaveStringToFile(Filename: string; Str: string; Encoding: TEncoding): Integer;
 var
   FS : TFileStream;
 begin
-  FS := TFileStream.Create(Filename, fmCreate or fmShareDenyWrite);
+  FS := nil;
   try
-    Result := FS.WriteRawAnsiString(Str);
+    FS := TFileStream.Create(Filename, fmCreate or fmShareDenyWrite);
+    Result := FS.FromString(Str, Encoding);
   finally
     FS.Free;
   end;

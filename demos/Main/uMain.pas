@@ -208,7 +208,6 @@ begin
   Obj.VaLlist.Add(3);
   Obj.VaLlist.Add(4);
 
-
   Obj.ObjList := TJX2ObjList.Create;
   Simple := TSimpleObject.Create;
   Simple.var1 := 5;
@@ -285,9 +284,7 @@ begin
   Memo1.Lines.Add( 'Object Creation (generate Beauty.json file), Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
-  FS := TFileStream.Create('Beauty.json', fmCreate);
-  FS.WriteRawUTF8String(UTF8String(Json));
-  FS.Free;
+  SaveStringToFile('Beauty.json', Json, TEncoding.UTF8);
 
   // Cloning through serialization
   CloneObj := W3DJX2.Deserialize<TComplexObj>(Json, []);
@@ -352,9 +349,7 @@ begin
 
   Memo1.Lines.Add('Read Json from geerated file (Beauty.json)');
   Memo4.Lines.Add('Read Json from geerated file (Beauty.json)');
-  FS := TFileStream.Create('Beauty.json', fmOpenRead + fmShareDenyNone);
-  Json := FS.ReadRawString(TEncoding.UTF8);
-  FS.Free;
+  Json := LoadStringFromFile('Beauty.json', TEncoding.UTF8);
 
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   Memo4.Lines.Add( W3DJX2.Beautifier(Json) );

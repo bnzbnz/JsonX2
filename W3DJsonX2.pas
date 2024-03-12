@@ -67,10 +67,10 @@ type
   function  JsonToTValue(AJValues: TJsonDataValueHelper): TValue;
   procedure SetJsonTValue(APJson: PJsonDataValue; AValue: TValue);
   procedure AddTValueToJsonArray(AJsonArr: TJsonArray; AValue: TValue);
-  {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
   procedure SetJsonVariant(APJson: PJsonDataValue; AValue: Variant);
-  function TValueToVariant(AValue: TValue): Variant;
-  {$ENDIF}
+  function  TValueToVariant(AValue: TValue): Variant;
+{$ENDIF}
 
 var
   W3DJX2 : TJsonX2;
@@ -79,14 +79,14 @@ implementation
 uses
     DateUtils
   , SysUtils
-  {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
   , Variants
-  {$ENDIF}
+{$ENDIF}
   , W3DJsonX2.Utils
   , W3DJsonX2.RTTI
   ;
 
-{$REGION 'Convert. Routines'}
+{$REGION 'Utils'}
 
 function JsonToTValue(AJValues: TJsonDataValueHelper): TValue;
 begin
@@ -235,7 +235,7 @@ begin
   end;
 end;
 
-{$ENDREGION 'Convert. Routines'}
+{$ENDREGION 'Utils'}
 
 {$REGION 'TJsonX2'}
 
@@ -258,12 +258,12 @@ procedure  TJsonX2.Serialize(
           );
 var
 
-  {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
   LVariant: variant;
   Lvar: variant;
   LVarLoop: variant;
   LStrVarDic: TPair<string, Variant>;
-  {$ENDIF}
+{$ENDIF}
   LJsonStr: string;
   LFields: TArray<TRTTIField>;
   LField: TRTTIField;
@@ -286,22 +286,13 @@ var
   LSuccess: Boolean;
   LAttrIntf: IJX2Converter;
 
-
-  procedure SetToNull(LJsonName: string; ASettings: TJX2Settings);
-  begin
-    (*
-    if not (jxoUnassignedToNull in ASettings) then exit;
-    if LJsonName.Trim.IsEmpty then exit;
-    *)
-    AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
-  end;
-
 begin
   if (AObj = nil) then exit;
   LFields := GetFields(AObj);
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
+
     LCurObj := nil;
     LJsonName := LField.Name;
     if LField.Name.StartsWith('_') then Continue;
@@ -309,6 +300,7 @@ begin
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
     if Assigned( GetFieldAttribute(LField, JX2AttrExclude) ) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
+
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
@@ -338,8 +330,9 @@ begin
         AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
       end;
       Continue;
-    end else
+    end;
 {$ENDIF}
+
     if LField.FieldType.TypeKind in [tkRecord] then
     begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
@@ -367,13 +360,13 @@ begin
           tkWChar: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkLString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
           tkWString: AJsonObj.InternAddItem(LJsonName).Value := LTValue.asString;
-          {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
           tkVariant:
             begin
               Lvar := LTValue.AsVariant; // Do not remove, it will crash the Linux Compiler
               AJsonObj.InternAddItem(LJsonName).VariantValue := LVar;
             end;
-          {$ENDIF}
+{$ENDIF}
           tkArray: LSuccess := False;
           tkRecord: LSuccess := False;
           tkInterface: LSuccess := False;
@@ -392,11 +385,13 @@ begin
         end;
       end;
       Continue;
-    end else
+    end;
 
     if LField.FieldType.TypeKind in [tkClass] then
     begin
+
       LCurObj := LField.GetValue(AObj).AsObject;
+
       if LCurObj = Nil then
       begin
         if not (jxoNullify in ASettings) then Continue;
@@ -406,30 +401,29 @@ begin
 
       if LCurObj.ClassType = TJX2ValueList then
       begin
-        // Done
         LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity :=  TJX2ValueList(LCurObj).Count;
         for LVal in  TJX2ValueList(LCurObj) do
           AddTValueToJsonArray(LJsonArr, LVal);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TJX2ValueList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
-    Continue;
-      end else
+        Continue;
+      end;
+
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarList then
       begin
-        // Done
         LJsonArr := TJsonArray.Create;
         LJsonArr.Capacity := TJX2VarList(LCurObj).Count;
         for LVariant in TJX2VarList(LCurObj) do LJsonArr.Add(LVariant);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TJX2VarList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
-    Continue;
-      end else
+        Continue;
+      end;
 {$ENDIF}
+
       if LCurObj.ClassType = TJX2ObjList then
       begin
-        // Done
         LJsonArr := TJSonArray.Create;
         LJsonArr.Capacity := TJX2ObjList(LCurObj).Count;
         for LObjLoopClass in TJX2ObjList(LCurObj) do
@@ -440,36 +434,32 @@ begin
         end;
         AJsonObj.InternAddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TJX2ObjList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
-    Continue;
-      end else
+        Continue;
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2StrVarDic then
       begin
-      // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         LJsonObj.Capacity := TJX2StrVarDic(LCurObj).Count;
         for LStrVarDic in TJX2StrVarDic(LCurObj) do
           SetJsonVariant(LJsonObj.AddItem(LStrVarDic.Key), LStrVarDic.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then TJX2StrVarDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
-    Continue;
-      end
-      else
+        Continue;
+      end;
 {$ENDIF}
 
       if LCurObj.ClassType = TJX2StrValueDic then
       begin
-      // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         LJsonObj.Capacity := TJX2StrValueDic(LCurObj).Count;
         for LStrValue in TJX2StrValueDic(LCurObj) do
           SetJsonTValue(LJsonObj.AddItem(LStrValue.Key), LStrValue.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then TJX2StrValueDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
-    Continue;
-      end
-      else
+        Continue;
+      end;
 
       if LCurObj.ClassType = TJX2StrObjDic then
       begin
@@ -483,38 +473,39 @@ begin
         end;
         aJsonObj.AddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then TJX2StrObjDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
-    Continue;
-      end else
-
-      begin
-
-        LAttr := GetFieldAttribute(LField, JX2AttrConv);
-        if Assigned(LAttr) then
-        begin
-          try
-            if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
-            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
-            LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
-            AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
-          except end;
-          Continue;
-        end;
-
-        LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        Serialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
-        aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
-        if jxoInnerJson in ASettings then TJX2(LCurObj)._InnerJson:= LJsonObj.ToJson;
         Continue;
       end;
 
-      if not (jxoNullify in ASettings) then Continue;
-      AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+      LAttr := GetFieldAttribute(LField, JX2AttrConv);
+     if Assigned(LAttr) then
+      begin
+        try
+          if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
+          if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
+          LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
+          AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
+        except end;
+        Continue;
+      end;
+
+      LJsonObj := TJsonObject(TJsonObject.NewInstance);
+      Serialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
+      aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+      if jxoInnerJson in ASettings then TJX2(LCurObj)._InnerJson:= LJsonObj.ToJson;
       Continue;
-    end else
+
+    end;
 
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
-      if LField.GetValue(AObj).AsInterface = Nil then begin SetToNull(LJsonName, ASettings); Continue; end;
+
+      if LField.GetValue(AObj).AsInterface = Nil then
+      begin
+        if not (jxoNullify in ASettings) then Continue;
+        AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+        Continue;
+      end;
+
       if not Supports(LField.GetValue(AObj).AsInterface, IJX2, LCurIntf) then
       begin
         LAttr := GetFieldAttribute(LField, JX2AttrConv);
@@ -527,38 +518,40 @@ begin
             AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
           except end;
           Continue;
-        end else
-        	begin SetToNull(LJsonName, ASettings); Continue; end;
+        end else begin
+          if not (jxoNullify in ASettings) then Continue;
+          AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+          Continue;
+        end;
       end;
+
       LTypedObj  := LCurIntf as TObject;
 
       if Supports(LTypedObj, IJX2ValueList) then
       begin
-      // Done
         LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity := TIJX2ValueList(LTypedObj).Count;
         for LVal in TIJX2ValueList(LTypedObj) do
           AddTValueToJsonArray(LJsonArr, LVal);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TIJX2ValueList(LTypedObj)._InnerJson := LJsonArr.ToJson;
-		Continue;
-      end else
+		    Continue;
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2VarList) then
       begin
-      // Done
         LJsonArr := TJsonArray.Create;
         LJsonArr.Capacity := TIJX2VarList(LTypedObj).Count;
         for LVarLoop in  TIJX2VarList(LTypedObj) do LJsonArr.Add(LVarLoop);
         AJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TIJX2VarList(LTypedObj)._InnerJson := LJsonArr.ToJson;
-		Continue;
-      end else
+		    Continue;
+      end;
 {$ENDIF}
+
       if Supports(LTypedObj, IJX2ObjList) then
       begin
-      // Done
         LJsonArr := TJSonArray.Create;
         LJsonArr.Capacity := TIJX2ObjList(LTypedObj).Count;
         for LObjLoop in TIJX2ObjList(LTypedObj)do
@@ -569,38 +562,35 @@ begin
         end;
         AJsonObj.InternAddItem(LJsonName).ArrayValue := LJsonArr;
         if jxoInnerJson in ASettings then TIJX2ObjList(LTypedObj)._InnerJson := LJsonArr.ToJSON();
-		Continue;
-      end else
+        Continue;
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2StrVarDic) then
       begin
-      // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         LJsonObj.Capacity := TIJX2StrVarDic(LTypedObj).Count;
         for LStrVarDic in TIJX2StrVarDic(LTypedObj) do
           SetJsonVariant(LJsonObj.AddItem(LStrVarDic.Key), LStrVarDic.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then TIJX2StrVarDic(LTypedObj)._InnerJson := LJsonObj.ToJSON();
-		Continue;
-      end else
+		    Continue;
+      end;
 {$ENDIF}
 
       if Supports(LTypedObj, IJX2StrValueDic) then
       begin
-      // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         LJsonObj.Capacity :=  TIJX2StrValueDic(LTypedObj).count;
         for LStrValue in  TIJX2StrValueDic(LTypedObj) do
           SetJsonTValue(LJsonObj.AddItem(LStrValue.Key), LStrValue.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then  TIJX2StrValueDic(LTypedObj)._InnerJson := LJsonObj.ToJSON();
-		Continue;
-      end else
+		    Continue;
+      end;
 
       if Supports(LTypedObj, IJX2StrObjDic) then
       begin
-      // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         LJsonObj.Capacity := TIJX2StrObjDic(LTypedObj).Count;
         for LStrObjPair in TIJX2StrObjDic(LTypedObj) do
@@ -611,29 +601,32 @@ begin
           if jxoInnerJson in ASettings then TIJX2StrObjDic(LTypedObj)._InnerJson := LJsonObjLoop.ToJSON();
         end;
         aJsonObj.AddItem(LJsonName).ObjectValue := LJsonObj;
-		Continue;
-      end else
+    		Continue;
+      end;
 
       if Supports(LTypedObj, IJX2) then
       begin
-        // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         Serialize(LTypedObj, LJsonObj, AJsonPatcher, ASettings);
         AJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
         if jxoInnerJson in ASettings then TIJX2(LTypedObj)._InnerJson := LJsonObj.ToJSON();
-    Continue;
+        Continue;
       end else begin
         if not (jxoNullify in ASettings) then Continue;
-          AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
+        AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
+        Continue;
       end;
-    end;
-  end; // for LField in LFields do
+
+    end; // LField.FieldType.TypeKind in [tkInterface]
+
+  end; // LField in LFields
 end;
 
 function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string;
 begin
   Result := Serialize(Intf as TObject, ASettings);
 end;
+
 function TJsonX2.Serialize(Obj: TObject; ASettings: TJX2Settings = []): string;
 var
   LJsonObj: TJsonObject;
@@ -658,22 +651,19 @@ begin
     on Ex: Exception do
       if (jxoRaiseException in ASettings) then raise Ex;
   end;
-
 end;
-
-{$REGION}
 
 procedure TJsonX2.Deserialize(
             AObj: TObject;
             AJsonObj: TJsonObject;
             ASettings: TJX2Settings);
 var
-  {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
   LNewStrVar: TJX2StrVarDic;
   LNewVarList : TJX2VarList;
   LINewVarList: TIJX2VarList;
   LINewStrVarDic: TIJX2StrVarDic;
-  {$ENDIF}
+{$ENDIF}
   LIdx: Integer;
   LFields: TArray<TRTTIField>;
   LJIdx: Integer;
@@ -723,13 +713,13 @@ begin
     LRTTIField := GetFieldName(LFields, LJName, LExplicit);
     if LRTTIField = Nil then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicit then Continue;
-    {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
     begin
       LRTTIField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
       continue
     end else
-    {$ENDIF}
+{$ENDIF}
     if LRTTIField.FieldType.TypeKind in [tkRecord] then
     begin
       if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
@@ -808,7 +798,7 @@ begin
         Continue;
       end else
 
-      {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarList then
       begin
         LNewVarList := TJX2VarList.Create;
@@ -828,7 +818,7 @@ begin
           LNewStrVar.Add(LJsObj.Names[LIdx],LJsObj.Values[LJsObj.Names[LIdx]]);
         Continue;
       end else
-      {$ENDIF}
+{$ENDIF}
 
       if LInstance.MetaclassType = TJX2StrValueDic then
       begin
@@ -840,7 +830,7 @@ begin
         Continue
       end else
 
-      {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
         LNewStrVar := TJX2StrVarDic.Create;
@@ -850,7 +840,7 @@ begin
           LNewStrVar.Add(LJsObj.Names[LIdx], LJsObj.Items[LIdx].Value);
         Continue;
       end else
-      {$ENDIF}
+{$ENDIF}
 
       begin
         LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
@@ -911,7 +901,8 @@ begin
             Deserialize(LNewObj, LJValue.ArrayValue.O[LIdx], ASettings);
           end;
         end;
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ValueList) then
       begin
@@ -920,9 +911,10 @@ begin
         LRTTIField.SetValue(AObj, LINewValList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewValList.Add(JsonToTValue(LJValue.ArrayValue.Values[LIdx]));
-      end else
+        Continue;
+      end;
 
-      {$IFNDEF JSX_NOVAR}
+{$IFNDEF JSX_NOVAR}
       if Supports(JX2AttrClass(LAttr).FClass, IJX2VarList) then
       begin
         LINewVarList := TIJX2VarList.Create;
@@ -930,7 +922,8 @@ begin
         LRTTIField.SetValue(AObj, LINewVarList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewVarList.Add(LJValue.ArrayValue.V[LIdx]);
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrVarDic) then
       begin
@@ -940,8 +933,9 @@ begin
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrVarDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].VariantValue);
-      end else
-      {$ENDIF}
+        Continue;
+      end;
+{$ENDIF}
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrValueDic) then
       begin
@@ -951,7 +945,8 @@ begin
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrValueDic.Add(LJsObj.Names[LIdx], JsonToTValue(LJsObj.Values[LJsObj.Names[LIdx]]));
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrObjDic) then
       begin
@@ -966,17 +961,17 @@ begin
           Supports(LNewObj, IJX2, LIntf);
           LINewStrObjDic.Add(LPair.Name, LIntf);
         end;
-      end else
-
-      begin
-        if LJValue.ObjectValue = Nil then Continue;
-        LNewObj := JX2AttrClass(LAttr).FClass.Create;
-        Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
-        LRTTIField.SetValue(AObj, LNewObj);
+        Continue;
       end;
 
-    end;
-   end;
+      if LJValue.ObjectValue = Nil then Continue;
+      LNewObj := JX2AttrClass(LAttr).FClass.Create;
+      Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
+      LRTTIField.SetValue(AObj, LNewObj);
+
+    end; // LRTTIField.FieldType.TypeKind in [tkInterface]
+
+  end;
 end;
 
 function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings = []): T;
@@ -1044,6 +1039,8 @@ begin
     LJsonObj.Free;
   end;
 end;
+
+{$ENDREGION 'TJsonX2'}
 
 initialization
   W3DJX2 := TJsonX2.Create;
