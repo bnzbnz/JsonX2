@@ -48,6 +48,7 @@ type
   function  URLEncode(const ToEncode: string): string;
   // Strings
   function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
+  function  SaveStringToFile(Filename: string;  Str: string): Integer;
   // Tools
   function  StringGUID: string;
   function  DelphiGUID: string;
@@ -209,6 +210,18 @@ begin
   FS := TFileStream.Create(Filename, fmOpenRead or fmShareDenyWrite);
   try
     Result := FS.ReadRawString(Encoding);
+  finally
+    FS.Free;
+  end;
+end;
+
+function SaveStringToFile(Filename: string; Str: String): Integer;
+var
+  FS : TFileStream;
+begin
+  FS := TFileStream.Create(Filename, fmCreate or fmShareDenyWrite);
+  try
+    Result := FS.WriteRawAnsiString(Str);
   finally
     FS.Free;
   end;

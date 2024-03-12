@@ -263,10 +263,6 @@ var
   Lvar: variant;
   LVarLoop: variant;
   LStrVarDic: TPair<string, Variant>;
-  LStrVarDicIntf: IJX2StrVarDic;
-  LVarListClass: TJX2VarList;
-  LObjStrVarDic: TJX2StrVarDic;
-  LVarListIntf: IJX2VarList;
   {$ENDIF}
   LJsonStr: string;
   LFields: TArray<TRTTIField>;
@@ -281,15 +277,10 @@ var
   LJsonArr: TJsonArray;
   LObjLoop: IJX2;
   LCurIntf: IJX2;
-  LStrValueDicIntf: IJX2StrValueDic;
-  LStrValueObj: TJX2StrValueDic;
   LStrValue: TPair<string, TValue>;
   LStrObjPair: TPair<string, IJX2>;
-  LValueListClass: TJX2ValueList;
-  LObjListClass: TJX2ObjList;
+  LStrObjLoopPair: TPair<string, TObject>;
   LObjLoopClass: TObject;
-  LObjStrObjDic: TJX2StrObjDic;
-  LStrObjLoopClass: TPair<string, TObject>;
   LTValue: TValue;
   LDouble: Double;
   LSuccess: Boolean;
@@ -313,6 +304,7 @@ begin
   begin
     LCurObj := nil;
     LJsonName := LField.Name;
+    if LField.Name.StartsWith('_') then Continue;
     LAttr := GetFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
     if Assigned( GetFieldAttribute(LField, JX2AttrExclude) ) then Continue;
@@ -415,39 +407,39 @@ begin
       if LCurObj.ClassType = TJX2ValueList then
       begin
         // Done
-        LValueListClass := TJX2ValueList(LCurObj);
-        LJsonArr := TJsonArray.Create;
-        LJsonArr.Capacity := LValueListClass.Count;
-        for LVal in LValueListClass do
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
+        LJsonArr.Capacity :=  TJX2ValueList(LCurObj).Count;
+        for LVal in  TJX2ValueList(LCurObj) do
           AddTValueToJsonArray(LJsonArr, LVal);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TJX2ValueList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
     Continue;
       end else
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarList then
       begin
         // Done
-        LVarListClass := TJX2VarList(LCurObj);
         LJsonArr := TJsonArray.Create;
-        LJsonArr.Capacity := LVarListClass.Count;
-        for LVariant in LVarListClass do LJsonArr.Add(LVariant);
+        LJsonArr.Capacity := TJX2VarList(LCurObj).Count;
+        for LVariant in TJX2VarList(LCurObj) do LJsonArr.Add(LVariant);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TJX2VarList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
     Continue;
       end else
 {$ENDIF}
       if LCurObj.ClassType = TJX2ObjList then
       begin
         // Done
-        LObjListClass := TJX2ObjList(LCurObj);
         LJsonArr := TJSonArray.Create;
-        LJsonArr.Capacity := LObjListClass.Count;
-        for LObjLoopClass in LObjListClass do
+        LJsonArr.Capacity := TJX2ObjList(LCurObj).Count;
+        for LObjLoopClass in TJX2ObjList(LCurObj) do
         begin
           LJsonObj := TJsonObject(TJsonObject.NewInstance);
           Serialize(LObjLoopClass, LJsonObj, AJsonPatcher, ASettings);
           LJsonArr.Add(LJsonObj);
         end;
         AJsonObj.InternAddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TJX2ObjList(LCurObj)._InnerJson:= LJsonArr.ToJSON();
     Continue;
       end else
 
@@ -456,11 +448,11 @@ begin
       begin
       // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        LObjStrVarDic := TJX2StrVarDic(LCurObj);
-        LJsonObj.Capacity := LObjStrVarDic.Count;
-        for LStrVarDic in LObjStrVarDic do
+        LJsonObj.Capacity := TJX2StrVarDic(LCurObj).Count;
+        for LStrVarDic in TJX2StrVarDic(LCurObj) do
           SetJsonVariant(LJsonObj.AddItem(LStrVarDic.Key), LStrVarDic.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TJX2StrVarDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
     Continue;
       end
       else
@@ -470,11 +462,11 @@ begin
       begin
       // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        LStrValueObj := TJX2StrValueDic(LCurObj);
-        LJsonObj.Capacity := LStrValueObj.Count;
-        for LStrValue in LStrValueObj do
+        LJsonObj.Capacity := TJX2StrValueDic(LCurObj).Count;
+        for LStrValue in TJX2StrValueDic(LCurObj) do
           SetJsonTValue(LJsonObj.AddItem(LStrValue.Key), LStrValue.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TJX2StrValueDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
     Continue;
       end
       else
@@ -482,15 +474,15 @@ begin
       if LCurObj.ClassType = TJX2StrObjDic then
       begin
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        LObjStrObjDic := TJX2StrObjDic(LCurObj);
-        LJsonObj.Capacity := LObjStrObjDic.Count;
-        for LStrObjLoopClass in LObjStrObjDic do
+        LJsonObj.Capacity := TJX2StrObjDic(LCurObj).Count;
+        for LStrObjLoopPair in TJX2StrObjDic(LCurObj) do
         begin
           LJsonObjLoop := TJsonObject(TJsonObject.NewInstance);
-          Serialize(LStrObjLoopClass.Value, LJsonObjLoop, AJsonPatcher, ASettings);
-          LJsonObj.AddItem(LStrObjLoopClass.Key).ObjectValue := LJsonObjLoop;
+          Serialize(LStrObjLoopPair.Value, LJsonObjLoop, AJsonPatcher, ASettings);
+          LJsonObj.AddItem(LStrObjLoopPair.Key).ObjectValue := LJsonObjLoop;
         end;
         aJsonObj.AddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TJX2StrObjDic(LCurObj)._InnerJson:= LJsonObj.ToJSON();
     Continue;
       end else
 
@@ -511,10 +503,12 @@ begin
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         Serialize(LCurObj, LJsonObj, AJsonPatcher, ASettings);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TJX2(LCurObj)._InnerJson:= LJsonObj.ToJson;
         Continue;
       end;
 
-      SetToNull(LJsonName, ASettings);
+      if not (jxoNullify in ASettings) then Continue;
+      AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
       Continue;
     end else
 
@@ -541,12 +535,12 @@ begin
       if Supports(LTypedObj, IJX2ValueList) then
       begin
       // Done
-        LValueListClass := TJX2ValueList(LTypedObj);
-        LJsonArr := TJsonArray.Create;
-        LJsonArr.Capacity := LValueListClass.Count;
-        for LVal in LValueListClass do
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
+        LJsonArr.Capacity := TIJX2ValueList(LTypedObj).Count;
+        for LVal in TIJX2ValueList(LTypedObj) do
           AddTValueToJsonArray(LJsonArr, LVal);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TIJX2ValueList(LTypedObj)._InnerJson := LJsonArr.ToJson;
 		Continue;
       end else
 
@@ -554,27 +548,27 @@ begin
       if Supports(LTypedObj, IJX2VarList) then
       begin
       // Done
-        LVarListIntf := TIJX2VarList(LTypedObj);
-        LJsonArr := TJsonArray.Create;;
-        LJsonArr.Capacity := TIJX2VarList(LVarListIntf).Count;
-        for LVarLoop in  TIJX2VarList(LVarListIntf) do LJsonArr.Add(LVarLoop);
+        LJsonArr := TJsonArray.Create;
+        LJsonArr.Capacity := TIJX2VarList(LTypedObj).Count;
+        for LVarLoop in  TIJX2VarList(LTypedObj) do LJsonArr.Add(LVarLoop);
         AJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TIJX2VarList(LTypedObj)._InnerJson := LJsonArr.ToJson;
 		Continue;
       end else
 {$ENDIF}
       if Supports(LTypedObj, IJX2ObjList) then
       begin
       // Done
-        LObjListClass := TJX2ObjList(LCurObj);
         LJsonArr := TJSonArray.Create;
         LJsonArr.Capacity := TIJX2ObjList(LTypedObj).Count;
-        for LObjLoop in TIJX2ObjList(LTypedObj) do
+        for LObjLoop in TIJX2ObjList(LTypedObj)do
         begin
           LJsonObj := TJsonObject(TJsonObject.NewInstance);
           Serialize(TObject(LObjLoop), LJsonObj, AJsonPatcher, ASettings);
           LJsonArr.Add(LJsonObj);
         end;
         AJsonObj.InternAddItem(LJsonName).ArrayValue := LJsonArr;
+        if jxoInnerJson in ASettings then TIJX2ObjList(LTypedObj)._InnerJson := LJsonArr.ToJSON();
 		Continue;
       end else
 
@@ -583,11 +577,11 @@ begin
       begin
       // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        LStrVarDicIntf := TIJX2StrVarDic(LTypedObj);
-        LJsonObj.Capacity := TIJX2StrVarDic(LStrVarDicIntf).Count;
-        for LStrVarDic in TIJX2StrVarDic(LStrVarDicIntf) do
+        LJsonObj.Capacity := TIJX2StrVarDic(LTypedObj).Count;
+        for LStrVarDic in TIJX2StrVarDic(LTypedObj) do
           SetJsonVariant(LJsonObj.AddItem(LStrVarDic.Key), LStrVarDic.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TIJX2StrVarDic(LTypedObj)._InnerJson := LJsonObj.ToJSON();
 		Continue;
       end else
 {$ENDIF}
@@ -596,11 +590,11 @@ begin
       begin
       // Done
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
-        LStrValueDicIntf := TIJX2StrValueDic(LTypedObj);
-        LJsonObj.Capacity := TIJX2StrValueDic(LStrValueDicIntf).count;
-        for LStrValue in TIJX2StrValueDic(LStrValueDicIntf) do
+        LJsonObj.Capacity :=  TIJX2StrValueDic(LTypedObj).count;
+        for LStrValue in  TIJX2StrValueDic(LTypedObj) do
           SetJsonTValue(LJsonObj.AddItem(LStrValue.Key), LStrValue.Value);
         aJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then  TIJX2StrValueDic(LTypedObj)._InnerJson := LJsonObj.ToJSON();
 		Continue;
       end else
 
@@ -614,6 +608,7 @@ begin
           LJsonObjLoop := TJsonObject(TJsonObject.NewInstance);
           Serialize(TObject(LStrObjPair.Value), LJsonObjLoop, AJsonPatcher, ASettings);
           LJsonObj.AddItem(LStrObjPair.Key).ObjectValue := LJsonObjLoop;
+          if jxoInnerJson in ASettings then TIJX2StrObjDic(LTypedObj)._InnerJson := LJsonObjLoop.ToJSON();
         end;
         aJsonObj.AddItem(LJsonName).ObjectValue := LJsonObj;
 		Continue;
@@ -625,11 +620,12 @@ begin
         LJsonObj := TJsonObject(TJsonObject.NewInstance);
         Serialize(LTypedObj, LJsonObj, AJsonPatcher, ASettings);
         AJsonObj.InternAddItem(LJsonName).ObjectValue := LJsonObj;
+        if jxoInnerJson in ASettings then TIJX2(LTypedObj)._InnerJson := LJsonObj.ToJSON();
     Continue;
-    end else
-
-      SetToNull(LJsonName, ASettings);
-
+      end else begin
+        if not (jxoNullify in ASettings) then Continue;
+          AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
+      end;
     end;
   end; // for LField in LFields do
 end;

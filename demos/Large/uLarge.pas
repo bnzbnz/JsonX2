@@ -113,7 +113,7 @@ begin
     SW.Stop;
     Memo1.Lines.Add('Read in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     Sw.Start;
-    Obj := W3DJX2.Deserialize<TfetchItemAspectsContentType>(Json, []);
+    Obj := W3DJX2.Deserialize<TfetchItemAspectsContentType>(Json);
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     SW.Stop; Sw.Start;
     var AspectValueCount: Integer;
@@ -124,8 +124,7 @@ begin
     Memo1.Lines.Add('eBay Aspect values : ' + AspectValueCount.ToString + ' (TObject Created)');
     Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
       Sw.Stop;   Sw.Start;
-    (W3DJX2.Serialize(Obj));
-
+    SaveStringToFile('Json.json', W3DJX2.Serialize(Obj, []) );
     Memo1.Lines.Add('Total Time : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
   finally
     Obj.Free;

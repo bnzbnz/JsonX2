@@ -282,7 +282,7 @@ begin
   // Obj Serialization
 
   Json := W3DJX2.Beautifier(W3DJX2.Serialize(Obj, []), True);
-  Memo1.Lines.Add( 'Object Creation (and generate Beauty.json file), Object is :');
+  Memo1.Lines.Add( 'Object Creation (generate Beauty.json file), Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
   FS := TFileStream.Create('Beauty.json', fmCreate);
@@ -327,8 +327,8 @@ begin
     Memo3.Lines.Add('    ' + IntToStr(i.AsInteger));
 
   Memo3.Lines.Add('IVaLlist : ');
-  for var i in TIJX2ValueList(Obj.IVaLlist) do
-    Memo3.Lines.Add(i.AsString);
+   for var i in TIJX2ValueList(Obj.IVaLlist) do
+     Memo3.Lines.Add(i.AsString);
 
   Memo3.Lines.Add('ObjList : ');
   for var i in TJX2ObjList(Obj.ObjList) do
@@ -361,7 +361,7 @@ begin
 
   Memo1.Lines.Add('Deserialize Object from Beauty.json, New Object is :');
   LObj := W3DJX2.Deserialize<TComplexObj>(Json);
-  Json :=  W3DJX2.Beautifier(W3DJX2.Serialize(LObj), True);
+  Json :=  W3DJX2.Beautifier(W3DJX2.Serialize(LObj, []), True);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
   LObj.Free;

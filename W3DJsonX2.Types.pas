@@ -48,6 +48,7 @@ type
     , jxoRaiseException         // Re-raise exception instead of an empty result;
     , jxoReturnEmptyJsonString  // Serialize: return an empty string instead of '{}' when the object is empty
     , jxoNullify                // Serialize empty fields as null, if not they are removed
+    , jxoInnerJson              // Get the inner json strong of the object
   );
   TJX2Settings = set of TJX2Setting;
 
@@ -120,6 +121,7 @@ type
   end;
 
   TIJX2 = class(TInterfacedObject, IJX2, IW3DCloneable)
+    _InnerJson: TValue;
     destructor Destroy; override;
     procedure CloneTo(ADestIntf: IJX2);
     function CloneSelf: IJX2;
@@ -132,11 +134,12 @@ type
 
   TIJX2ValueList = class(TList<TValue>, IJX2ValueList, IJX2)
   protected
-    _FRefCount: Integer;
+    FRefCount: Integer;
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -149,11 +152,12 @@ type
   {$IFNDEF JSX_NOVAR}
   TIJX2VarList = class(TList<Variant>, IJX2VarList, IJX2)
   protected
-    _FRefCount: Integer;
+    FRefCount: Integer;
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -171,6 +175,7 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -188,6 +193,7 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -205,6 +211,7 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -216,11 +223,12 @@ type
 
   TIJX2StrObjDic = class(TObjectDictionary<string, IJX2>, IJX2StrObjDic, IJX2)
   protected
-    FRefCount: Integer;
+     FRefCount: Integer;
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
+    _InnerJson: TValue;
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
@@ -231,36 +239,43 @@ type
 {$REGION 'Classes'}
 
   TJX2 = class(TObject)
+    _InnerJson: TValue;
     destructor Destroy; override;
     function Clone: TJX2;
     procedure CloneTo(ADest: TJX2);
   end;
 
   TJX2ValueList  = class(TList<TValue>)
+    _InnerJson: TValue;
     function Clone: TJX2ValueList;
   end;
 
   {$IFNDEF JSX_NOVAR}
   TJX2VarList  = class(TList<variant>)
+    _InnerJson: TValue;
     function Clone: TJX2VarList;
   end;
   {$ENDIF}
 
   TJX2ObjList  = class(TObjectList<TObject>) // Requires AJsonXClassType Attribute(Object class type)
+    _InnerJson: string;
     function Clone: TJX2ObjList;
   end;
 
   {$IFNDEF JSX_NOVAR}
   TJX2StrVarDic = class(TDictionary<string, variant>)
+    _InnerJson: TValue;
     function Clone: TJX2StrVarDic;
   end;
   {$ENDIF}
 
   TJX2StrValueDic = class(TDictionary<string, TValue>)
+    _InnerJson: TValue;
     function Clone: TJX2StrValueDic;
   end;
 
   TJX2StrObjDic = class(TObjectDictionary<string, TObject>)  // Requires AJsonXClassType Attribute(Object class type)
+    _InnerJson: TValue;
     constructor Create; overload;
     function Clone: TJX2StrObjDic;
   end;
@@ -504,12 +519,12 @@ end;
 
 function TIJX2ValueList._AddRef: Integer;
 begin
-  Result := AtomicIncrement(_FRefCount);
+  Result := AtomicIncrement(FRefCount);
 end;
 
 function TIJX2ValueList._Release: Integer;
 begin
-  Result := AtomicDecrement(_FRefCount);
+  Result := AtomicDecrement(FRefCount);
   if Result = 0 then
     Destroy;
 end;
@@ -587,12 +602,12 @@ end;
 
 function TIJX2VarList._AddRef: Integer;
 begin
-  Result := AtomicIncrement(_FRefCount);
+  Result := AtomicIncrement(FRefCount);
 end;
 
 function TIJX2VarList._Release: Integer;
 begin
-  Result := AtomicDecrement(_FRefCount);
+  Result := AtomicDecrement(FRefCount);
   if Result = 0 then
     Destroy;
 end;
