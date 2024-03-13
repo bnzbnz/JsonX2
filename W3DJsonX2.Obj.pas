@@ -2523,14 +2523,14 @@ begin
     jdtBool:
       Result := FValue.B;
     jdtArray:
-      ErrorUnsupportedVariantType(varArray);
+      ErrorUnsupportedTValueType(tkArray);
     jdtObject:
       if FValue.O = nil then
         Result := nil // special handling for "null"
       else
-        ErrorUnsupportedVariantType(varObject);
+        ErrorUnsupportedTValueType(tkPointer);
   else
-    ErrorUnsupportedVariantType(varAny);
+    ErrorUnsupportedTValueType(tkUnknown);
   end;
 end;
 {$ENDIF}
@@ -7778,14 +7778,14 @@ begin
       jdtBool:
         Result := Value.FData.FBoolValue;
       jdtArray:
-        ErrorUnsupportedVariantType(varArray);
+        ErrorUnsupportedTValueType(tkArray);
       jdtObject:
         if Value.FData.FObj = nil then
           Result := nil
         else
-          ErrorUnsupportedTValueType(Value);
+          ErrorUnsupportedTValueType(tkPointer);
     else
-      ErrorUnsupportedTValueType(Value);
+      ErrorUnsupportedTValueType(tkUnknown);
     end;
 end;
 
