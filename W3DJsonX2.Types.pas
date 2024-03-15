@@ -372,7 +372,7 @@ begin
         AField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
       else
       begin
-        LAttr := GetFieldAttribute(AField, JX2AttrConv);
+        LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
@@ -400,10 +400,10 @@ begin
 
     if AField.GetValue(ASelf).AsInterface= nil then  Exit;
 
-    LAttr := GetFieldAttribute(AField, JX2AttrConv);
+    LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
     if Assigned(LAttr) then
     begin
-      LAttr := GetFieldAttribute(AField, JX2AttrConv);
+      LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
       try
@@ -465,10 +465,10 @@ var
   LAttr: JX2AttrConv;
   LAttrIntf: IJX2Converter;
 begin
-  for LField in W3DJsonX2.RTTI.GetFields(Self) do
+  for LField in W3DJsonX2.RTTI.GetRTTIFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
     begin
-      LAttr := JX2AttrConv(GetFieldAttribute(LField, JX2AttrConv));
+      LAttr := JX2AttrConv(GetRTTIFieldAttribute(LField, JX2AttrConv));
       if Assigned(LAttr) and Assigned(LAttr.FConv) then
         if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
           if (LField.GetValue(Self).AsObject <> nil) then
@@ -501,7 +501,7 @@ procedure TIJX2.CloneTo(ADestIntf: IJX2);
 var
   Field: TRttiField;
 begin
-  for Field in GetFields(ADestIntf as TObject) do
+  for Field in GetRTTIFields(ADestIntf as TObject) do
     GenericClone(Self, ADestIntf as TObject, Field);
 end;
 
@@ -837,10 +837,10 @@ var
   LAttr: JX2AttrConv;
   LAttrIntf: IJX2Converter;
 begin
-  for LField in W3DJsonX2.RTTI.GetFields(Self) do
+  for LField in W3DJsonX2.RTTI.GetRTTIFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
     begin
-      LAttr := JX2AttrConv(GetFieldAttribute(LField, JX2AttrConv));
+      LAttr := JX2AttrConv(GetRTTIFieldAttribute(LField, JX2AttrConv));
       if Assigned(LAttr) and Assigned(LAttr.FConv) then
         if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
           if (LField.GetValue(Self).AsObject <> nil) then
@@ -860,7 +860,7 @@ procedure TJX2.CloneTo(ADest: TJX2);
 var
   LField: TRTTIField;
 begin
-   for LField in GetFields(ADest) do
+   for LField in GetRTTIFields(ADest) do
     GenericClone(Self, ADest, LField);
 end;
 

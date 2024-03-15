@@ -101,7 +101,6 @@ var
 
 {$IFNDEF JSX_NOVAR}
   LVariant: variant;
-  Lvar: variant;
   LVarLoop: variant;
   LStrVarDic: TPair<string, Variant>;
 {$ENDIF}
@@ -123,13 +122,11 @@ var
   LStrObjLoopPair: TPair<string, TObject>;
   LObjLoopClass: TObject;
   LTValue: TValue;
-  LDouble: Double;
-  LSuccess: Boolean;
   LAttrIntf: IJX2Converter;
 
 begin
   if (AObj = nil) then exit;
-  LFields := GetFields(AObj);
+  LFields := GetRTTIFields(AObj);
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
@@ -137,9 +134,9 @@ begin
     LCurObj := nil;
     LJsonName := LField.Name;
     if LField.Name.StartsWith('_') then Continue;
-    LAttr := GetFieldAttribute(LField, JX2AttrName);
+    LAttr := GetRTTIFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
-    if Assigned( GetFieldAttribute(LField, JX2AttrExclude) ) then Continue;
+    if Assigned( GetRTTIFieldAttribute(LField, JX2AttrExclude) ) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 
 {$IFNDEF JSX_NOVAR}
@@ -273,8 +270,8 @@ begin
         Continue;
       end;
 
-      LAttr := GetFieldAttribute(LField, JX2AttrConv);
-     if Assigned(LAttr) then
+      LAttr := GetRTTIFieldAttribute(LField, JX2AttrConv);
+      if Assigned(LAttr) then
       begin
         try
           if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
@@ -305,7 +302,7 @@ begin
 
       if not Supports(LField.GetValue(AObj).AsInterface, IJX2, LCurIntf) then
       begin
-        LAttr := GetFieldAttribute(LField, JX2AttrConv);
+        LAttr := GetRTTIFieldAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
@@ -489,7 +486,7 @@ var
     AExplicit := False;
     for Result in AFields do
     begin
-      AAttr := JX2AttrName(GetFieldAttribute(Result, JX2AttrName));
+      AAttr := JX2AttrName(GetRTTIFieldAttribute(Result, JX2AttrName));
       AExplicit := (AAttr <> Nil) and (AAttr.FName = AJsonName);
       if AExplicit then Exit;
       if AJsonName = Result.Name then Exit;
@@ -499,7 +496,7 @@ var
 
 begin
   if (AJsonObj = nil) or (AObj = nil) then  Exit;
-  LFields := GetFields(AObj);
+  LFields := GetRTTIFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
     LJValue := AJsonObj.Items[LJIdx];
@@ -549,7 +546,7 @@ begin
 
       if LInstance.MetaclassType = TJX2StrObjDic then
       begin
-        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
+        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
         if LJValue.ObjectValue = Nil then Continue;
@@ -567,7 +564,7 @@ begin
 
       if LInstance.MetaclassType = TJX2ObjList then
       begin
-        LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
+        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
         if LAttr = Nil then
           raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
         LNewObjList := TJX2ObjList.Create(True);
@@ -637,7 +634,7 @@ begin
 {$ENDIF}
 
       begin
-        LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
+        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
@@ -665,7 +662,7 @@ begin
         Continue;
       end;
 
-      LAttr := GetFieldAttribute(LRTTIField, JX2AttrConv);
+      LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
         try
@@ -677,7 +674,7 @@ begin
         Continue;
       end;
 
-      LAttr := GetFieldAttribute(LRTTIField, JX2AttrClass);
+      LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
       if LAttr = Nil then
         raise Exception.Create('Interface is missing JX2AttrClass : ' + LRTTIField.Name);
 

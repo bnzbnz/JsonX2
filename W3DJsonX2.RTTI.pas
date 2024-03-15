@@ -25,25 +25,22 @@ SOFTWARE.
 unit W3DJsonX2.RTTI;
 
 interface
-uses RTTI, System.Generics.Collections, SyncObjs;
+uses RTTI, System.Generics.Collections, SyncObjs, W3DJsonX2.Sync;
 
 {.$DEFINE JSX_NOCACHE}
 
-function  GetFields(aObj: TObject): TArray<TRTTIField>;
-function  GetProps(aObj: TObject): TArray<TRTTIProperty>;
-function  GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
-function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function  GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
+function  GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
+function  GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 
 {$IFNDEF JSX_NOCACHE}
 var
-  _Cleaner: Integer;
-  _RTTIFieldsCacheDic: TDictionary<TClass, TArray<TRttiField>>;
-  _RTTIPropsCacheDic: TDictionary<TClass, TArray<TRTTIProperty>>;
-  _RTTIAttrsCacheDic: TDictionary<TRTTIField, TArray<TCustomAttribute>>;
-  _RTTIInstCacheDic: TDictionary<TRTTIField, TRttiInstanceType>;
+  _RTTIFieldsCacheDic: TThreadDict<TClass, TArray<TRttiField>>;
+  _RTTIPropsCacheDic: TThreadDict<TClass, TArray<TRTTIProperty>>;
+  _RTTIAttrsCacheDic: TThreadDict<TRTTIField, TArray<TCustomAttribute>>;
+  _RTTIInstCacheDic: TThreadDict<TRTTIField, TRttiInstanceType>;
   _RTTIctx: TRttiContext;
-  _JRTTICache: array[0..65535] of TArray<TRttiField>;
-  _FielddLock : TCriticalSection;
 {$ELSE}
 var
   _RTTIctx: TRttiContext;
@@ -53,19 +50,17 @@ implementation
 uses W3DJsonX2.Types, W3DJsonX2.Utils;
 
 
-function GetFields(aObj: TObject): TArray<TRTTIField>;
+function GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
 {$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
 begin
-  MonitorEnter(_RTTIFieldsCacheDic);
   CType := aObj.ClassType;
   if not _RTTIFieldsCacheDic.TryGetValue(CType, Result) then
   begin
     Result :=  _RTTIctx.GetType(CType).GetFields;
     _RTTIFieldsCacheDic.Add(CType, Result);
   end;
-  MonitorExit(_RTTIFieldsCacheDic);
 end;
 {$ELSE}
 begin
@@ -73,19 +68,17 @@ begin
 end;
 {$ENDIF}
 
-function GetProps(aObj: TObject): TArray<TRTTIProperty>;
+function GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
 {$IFNDEF JSX_NOCACHE}
 var
   CType: TClass;
 begin
-  MonitorEnter(_RTTIPropsCacheDic);
   CType := aObj.ClassType;
   if not _RTTIPropsCacheDic.TryGetValue(CType, Result) then
   begin
     Result :=  _RTTIctx.GetType(CType).GetProperties;
     _RTTIPropsCacheDic.Add(CType, Result);
   end;
-  MonitorExit(_RTTIPropsCacheDic);
 end;
 {$ELSE}
 begin
@@ -94,14 +87,13 @@ end;
 {$ENDIF}
 
 
-function GetFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
 var
   LIdx: Integer;
   LAttrs: TArray<TCustomAttribute>;
 begin
 
 {$IFNDEF JSX_NOCACHE}
-  MonitorEnter(_RTTIAttrsCacheDic);
   Result := Nil;
   if not _RTTIAttrsCacheDic.TryGetValue(Field, LAttrs) then
   begin
@@ -114,7 +106,6 @@ begin
       Result := LAttrs[LIdx];
       Break;
     end;
-  MonitorExit(_RTTIAttrsCacheDic);
 {$ELSE}
 
   {$IF CompilerVersion > 34.0} // Alexandria 11, Athens 12
@@ -124,11 +115,11 @@ begin
   {$ELSE}
   begin
     Result := Nil;
-    LAttr := Field.GetAttributes;
-    for LIdx := 0 to Length(LAttr) - 1 do
-      if LAttr[LIdx].ClassType = AttrClass then
+    LAttrs := Field.GetAttributes;
+    for LIdx := 0 to Length(LAttrs) - 1 do
+      if LAttrs[LIdx].ClassType = AttrClass then
       begin
-          Result := LAttr[LIdx];
+          Result := LAttrs[LIdx];
           Break;
       end;
   end;
@@ -137,16 +128,14 @@ begin
 {$ENDIF}
 end;
 
-function  GetFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
 begin
 {$IFNDEF JSX_NOCACHE}
-  MonitorEnter(_RTTIInstCacheDic);
   if not _RTTIInstCacheDic.TryGetValue(Field, Result) then
   begin
     Result := Field.FieldType.AsInstance;
     _RTTIInstCacheDic.Add(Field, Result);
   end;
-  MonitorExit(_RTTIInstCacheDic);
 {$ELSE}
   Result := Field.FieldType.AsInstance;
 {$ENDIF}
@@ -154,11 +143,11 @@ end;
 
 initialization
 {$IFNDEF JSX_NOCACHE}
-  _RTTIFieldsCacheDic := TDictionary<TClass, TArray<TRttiField>>.Create;
-  _RTTIPropsCacheDic := TDictionary<TClass, TArray<TRttiProperty>>.Create;
-  _RTTIAttrsCacheDic := TDictionary<TRTTIField, TArray<TCustomAttribute>>.Create;
-  _RTTIInstCacheDic := TDictionary<TRTTIField, TRttiInstanceType>.Create;
-  for _Cleaner :=0 to 65535 do _JRTTICache[_Cleaner] := Nil;
+  _RTTIFieldsCacheDic := TThreadDict<TClass, TArray<TRttiField>>.Create;
+  _RTTIPropsCacheDic := TThreadDict<TClass, TArray<TRttiProperty>>.Create;
+  _RTTIAttrsCacheDic := TThreadDict<TRTTIField, TArray<TCustomAttribute>>.Create;
+  _RTTIInstCacheDic := TThreadDict<TRTTIField, TRttiInstanceType>.Create;
+
 {$ENDIF}
 finalization
 {$IFNDEF JSX_NOCACHE}
