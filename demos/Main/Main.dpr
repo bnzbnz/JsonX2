@@ -12,7 +12,7 @@ uses
   uMain in 'uMain.pas' {Form2},
   W3DJsonX2.Conv in '..\..\W3DJsonX2.Conv.pas',
   W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas',
-  W3DJsonX2.Pool in '..\..\W3DJsonX2.Pool.pas';
+  W3DJsonX2.Sync in '..\..\W3DJsonX2.Sync.pas';
 
 {$R *.res}
 
