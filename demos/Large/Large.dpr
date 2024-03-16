@@ -11,7 +11,8 @@ uses
   W3DJsonX2.RTTI in '..\..\W3DJsonX2.RTTI.pas',
   W3DJsonX2.Types in '..\..\W3DJsonX2.Types.pas',
   W3DJsonX2.Utils in '..\..\W3DJsonX2.Utils.pas',
-  W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas';
+  W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas',
+  W3DJsonX2.Sync in '..\..\W3DJsonX2.Sync.pas';
 
 {$R *.res}
 
