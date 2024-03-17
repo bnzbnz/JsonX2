@@ -118,6 +118,7 @@ begin
     Sw.Stop;
     Memo1.Lines.Add('ToJson in : ' + Sw.ElapsedMilliseconds.ToString + 'ms');
     var AspectValueCount: Integer;
+    if not Assigned(Obj) then Exit;
     if assigned(Obj.categoryAspects) then for var i in Obj.categoryAspects do
       if assigned(TcategoryAspects(i).aspects) then for var t in TcategoryAspects(i).aspects do
         if assigned(TcategoryAspect(t).aspectValues) then for var j in TcategoryAspect(t).aspectValues do

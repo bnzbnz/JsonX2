@@ -93,7 +93,7 @@ end;
 
 procedure  TJsonX2.Serialize(
             AObj: TObject;
-            AJsonObj: W3DJsonX2.Obj.TJsonObject;
+            AJsonObj: TJsonObject;
             AJsonPatcher: TJX2Patcher;
             ASettings: TJX2Settings
           );
@@ -136,7 +136,7 @@ begin
     if LField.Name.StartsWith('_') then Continue;
     LAttr := GetRTTIFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
-    if Assigned( GetRTTIFieldAttribute(LField, JX2AttrExclude) ) then Continue;
+    if Assigned(GetRTTIFieldAttribute(LField, JX2AttrExclude)) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 
 {$IFNDEF JSX_NOVAR}
@@ -441,7 +441,6 @@ begin
     on Ex: Exception do
       if (jxoRaiseException in ASettings) then raise Ex;
   end;
-
 end;
 
 procedure TJsonX2.Deserialize(
@@ -474,8 +473,7 @@ var
   LINewObjList: TIJX2ObjList;
   LINewStrValueDic: TIJX2StrValueDic;
   LINewStrObjDic: TIJX2StrObjDic;
-  LTValue: TValue;
-  LExplicit: Boolean;
+  LExplicitName: Boolean;
   LAttr: TCustomAttribute;
   LAttrIntf: IJX2Converter;
 
@@ -501,9 +499,31 @@ begin
   begin
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
-    LRTTIField := GetFieldName(LFields, LJName, LExplicit);
+    LRTTIField := GetFieldName(LFields, LJName, LExplicitName);
     if LRTTIField = Nil then Continue;
-    if (jxExplicitbinding in ASettings) and not LExplicit then Continue;
+    if (jxExplicitbinding in ASettings) and not LExplicitName then Continue;
+
+    if LRTTIField.FieldType.TypeKind in [tkRecord] then
+    begin
+      if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
+      begin
+        case LJValue.Typ of
+          jdtNone: LRTTIField.SetValue(AObj, nil);
+          jdtString: LRTTIField.SetValue(AObj, LJValue.Value);
+          jdtInt: LRTTIField.SetValue(AObj, LJValue.IntValue);
+          jdtLong: LRTTIField.SetValue(AObj, LJValue.LongValue);
+          jdtULong: LRTTIField.SetValue(AObj, LJValue.ULongValue);
+          jdtFloat: LRTTIField.SetValue(AObj, LJValue.FloatValue);
+          jdtDateTime: LRTTIField.SetValue(AObj, DateToISO8601(LJValue.UtcDateTimeValue));
+          jdtUtcDateTime: LRTTIField.SetValue(AObj, DateToISO8601(LJValue.UtcDateTimeValue));
+          jdtBool: LRTTIField.SetValue(AObj, LJValue.BoolValue);
+          jdtArray: LRTTIField.SetValue(AObj, nil);
+          jdtObject: LRTTIField.SetValue(AObj, nil);
+        end;
+      end;
+      Continue;
+    end else
+
 {$IFNDEF JSX_NOVAR}
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
     begin
@@ -511,27 +531,6 @@ begin
       continue
     end else
 {$ENDIF}
-    if LRTTIField.FieldType.TypeKind in [tkRecord] then
-    begin
-      if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
-      begin
-        case LJValue.Typ of
-         jdtNone: LTValue := nil;
-         jdtString: LTValue := LJValue.Value;
-         jdtInt: LTValue := LJValue.IntValue;
-         jdtLong: LTValue := LJValue.LongValue;
-         jdtULong: LTValue := LJValue.ULongValue;
-         jdtFloat: LTValue := LJValue.FloatValue;
-         jdtDateTime: LTValue := DateToISO8601(LJValue.UtcDateTimeValue);
-         jdtUtcDateTime: LTValue := DateToISO8601(LJValue.UtcDateTimeValue);
-         jdtBool: LTValue := LJValue.BoolValue;
-         jdtArray: LTValue := nil;
-         jdtObject: LTValue := nil;
-        end;
-        LRTTIField.SetValue(AObj, LTValue);
-        Continue;
-      end;
-    end else
 
     if LRTTIField.FieldType.TypeKind in [tkClass] then
     begin

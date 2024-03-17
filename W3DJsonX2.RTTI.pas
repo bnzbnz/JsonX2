@@ -55,9 +55,9 @@ function GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
 var
   CType: TClass;
 begin
-  CType := aObj.ClassType;
-  if not _RTTIFieldsCacheDic.TryGetValue(CType, Result) then
+  if not _RTTIFieldsCacheDic.TryGetValue(aObj.ClassType, Result) then
   begin
+    CType := aObj.ClassType;
     Result :=  _RTTIctx.GetType(CType).GetFields;
     _RTTIFieldsCacheDic.Add(CType, Result);
   end;
@@ -73,9 +73,9 @@ function GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
 var
   CType: TClass;
 begin
-  CType := aObj.ClassType;
   if not _RTTIPropsCacheDic.TryGetValue(CType, Result) then
   begin
+    CType := aObj.ClassType;
     Result :=  _RTTIctx.GetType(CType).GetProperties;
     _RTTIPropsCacheDic.Add(CType, Result);
   end;
@@ -93,11 +93,11 @@ var
   LAttrs: TArray<TCustomAttribute>;
 begin
 
-{$IFNDEF JSX_NOCACHE}
-  Result := Nil;
+  {$IFNDEF JSX_NOCACHE}
+  Result := nil;
   if not _RTTIAttrsCacheDic.TryGetValue(Field, LAttrs) then
   begin
-     LAttrs := Field.GetAttributes;
+    LAttrs := Field.GetAttributes;
     _RTTIAttrsCacheDic.Add(Field, LAttrs);
   end;
   for LIdx := Length(LAttrs) - 1 downto 0 do
@@ -106,24 +106,24 @@ begin
       Result := LAttrs[LIdx];
       Break;
     end;
-{$ELSE}
-
-  {$IF CompilerVersion > 34.0} // Alexandria 11, Athens 12
-  begin
-    Result := Field.GetAttribute(TCustomAttributeClass(AttrClass));
-  end;
   {$ELSE}
-  begin
-    Result := Nil;
-    LAttrs := Field.GetAttributes;
-    for LIdx := 0 to Length(LAttrs) - 1 do
-      if LAttrs[LIdx].ClassType = AttrClass then
-      begin
-          Result := LAttrs[LIdx];
-          Break;
-      end;
-  end;
-  {$ENDIF}
+
+    {$IF CompilerVersion > 34.0} // Alexandria 11, Athens 12
+    begin
+      Result := Field.GetAttribute(TCustomAttributeClass(AttrClass));
+    end;
+    {$ELSE}
+    begin
+      Result := nil;
+      LAttrs := Field.GetAttributes;
+      for LIdx := 0 to Length(LAttrs) - 1 do
+        if LAttrs[LIdx].ClassType = AttrClass then
+        begin
+            Result := LAttrs[LIdx];
+            Break;
+        end;
+    end;
+    {$ENDIF}
 
 {$ENDIF}
 end;
@@ -133,7 +133,7 @@ begin
 {$IFNDEF JSX_NOCACHE}
   if not _RTTIInstCacheDic.TryGetValue(Field, Result) then
   begin
-    Result := Field.FieldType.AsInstance;
+   Result := Field.FieldType.AsInstance;
     _RTTIInstCacheDic.Add(Field, Result);
   end;
 {$ELSE}
