@@ -130,7 +130,7 @@ begin
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
-
+    if (jxoPublicBindingOnly in ASettings) and (LField.Visibility <> mvPublic) then Continue;
     LCurObj := nil;
     LJsonName := LField.Name;
     if LField.Name.StartsWith('_') then Continue;
@@ -176,7 +176,7 @@ begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
       begin
         if not LField.GetValue(AObj).TryAsType<TValue>(LTValue) then Continue;
-        if LTValue.IsEmpty and not (jxoNullify in ASettings) then Continue;
+        if  not (jxoNullify in ASettings) and LTValue.IsEmpty then Continue;
         AJsonObj.InternAddItem(LJsonName).TValueValue := LTValue;
       end;
       Continue;
@@ -493,7 +493,7 @@ var
   end;
 
 begin
-  if (AJsonObj = nil) or (AObj = nil) then  Exit;
+  if (AJsonObj = nil) or (AObj = nil) then Exit;
   LFields := GetRTTIFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
@@ -501,6 +501,7 @@ begin
     LJName := AJsonObj.Names[LJIdx];
     LRTTIField := GetFieldName(LFields, LJName, LExplicitName);
     if LRTTIField = Nil then Continue;
+    if (jxoPublicBindingOnly in ASettings) and (LRTTIField.Visibility <> mvPublic) then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicitName then Continue;
 
     if LRTTIField.FieldType.TypeKind in [tkRecord] then

@@ -52,14 +52,11 @@ uses W3DJsonX2.Types, W3DJsonX2.Utils;
 
 function GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
 {$IFNDEF JSX_NOCACHE}
-var
-  CType: TClass;
 begin
   if not _RTTIFieldsCacheDic.TryGetValue(aObj.ClassType, Result) then
   begin
-    CType := aObj.ClassType;
-    Result :=  _RTTIctx.GetType(CType).GetFields;
-    _RTTIFieldsCacheDic.Add(CType, Result);
+    Result :=  _RTTIctx.GetType(aObj.ClassType).GetFields;
+    _RTTIFieldsCacheDic.Add(aObj.ClassType, Result);
   end;
 end;
 {$ELSE}
@@ -70,14 +67,11 @@ end;
 
 function GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
 {$IFNDEF JSX_NOCACHE}
-var
-  CType: TClass;
 begin
-  if not _RTTIPropsCacheDic.TryGetValue(CType, Result) then
-  begin
-    CType := aObj.ClassType;
-    Result :=  _RTTIctx.GetType(CType).GetProperties;
-    _RTTIPropsCacheDic.Add(CType, Result);
+  if not _RTTIPropsCacheDic.TryGetValue(aObj.ClassType, Result) then
+  begin;
+    Result :=  _RTTIctx.GetType(aObj.ClassType).GetProperties;
+    _RTTIPropsCacheDic.Add(aObj.ClassType, Result);
   end;
 end;
 {$ELSE}
