@@ -54,7 +54,7 @@ type
     constructor Create; overload;
     destructor Destroy; override;
 
-    function  Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
+    function  Beautifier(const AJsonStr : string; Compact: Boolean = False; ASettings: TJX2Settings = []): string;
 
     procedure Serialize(AObj: TObject; AJsonObj: TJsonObject; AJsonPatcher: TJX2Patcher; ASettings: TJX2Settings); overload;
     function  Serialize(Obj: TObject; ASettings: TJX2Settings = []): string; overload;
@@ -808,15 +808,19 @@ begin
   end;
 end;
 
-function TJsonX2.Beautifier(const AJsonStr : string; Compact: Boolean): string;
+function TJsonX2.Beautifier(const AJsonStr : string; Compact: Boolean = False; ASettings: TJX2Settings = []): string;
 var
   LJsonObj: TJsonObject;
 begin
-  Result := '{}';
+  LJsonObj := nil;
+  try
   LJsonObj := TJsonObject(TJsonObject.NewInstance);
   try
     LJsonObj.FromJSON(AJsonStr);
     Result := LJsonObj.ToJSon(Compact);
+  except
+    if jxoReturnEmptyJsonString in ASettings then Exit('') else Exit('{}');
+  end;
   finally
     LJsonObj.Free;
   end;

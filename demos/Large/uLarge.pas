@@ -120,11 +120,11 @@ begin
     var AspectValueCount: Integer;
     if not Assigned(Obj) then Exit;
     if assigned(Obj.categoryAspects) then for var i in Obj.categoryAspects do
-      if assigned(TcategoryAspects(i).aspects) then for var t in TcategoryAspects(i).aspects do
-        if assigned(TcategoryAspect(t).aspectValues) then for var j in TcategoryAspect(t).aspectValues do
+      if assigned(TcategoryAspects(i).aspects) then for var j in TcategoryAspects(i).aspects do
+        if assigned(TcategoryAspect(j).aspectValues) then for var k in TcategoryAspect(j).aspectValues do
           Inc(AspectValueCount);
     Memo1.Lines.Add('eBay Aspect values count : ' + AspectValueCount.ToString + ' (TObject Created)');
-    SW.Start;
+    Sw.Reset; Sw.Start;
     SaveStringToFile('Json.json', W3DJX2.Serialize(Obj, []), TEncoding.UTF8 );
     Memo1.Lines.Add(' From Json to File :' + Sw.ElapsedMilliseconds.ToString + 'ms');
   finally
