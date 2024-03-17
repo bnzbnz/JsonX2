@@ -153,8 +153,6 @@ begin
           AJsonObj.InternAddItem(LJsonName).Value := LVariant;
         varSmallInt, varInteger, varShortInt, varByte, varWord, varLongWord:
           AJsonObj.InternAddItem(LJsonName).IntValue := LVariant;
-        varDate:
-          AJsonObj.InternAddItem(LJsonName).DateTimeValue := (LVariant);
         varBoolean:
           AJsonObj.InternAddItem(LJsonName).BoolValue := (LVariant);
         varInt64:
@@ -515,8 +513,6 @@ begin
           jdtLong: LRTTIField.SetValue(AObj, LJValue.LongValue);
           jdtULong: LRTTIField.SetValue(AObj, LJValue.ULongValue);
           jdtFloat: LRTTIField.SetValue(AObj, LJValue.FloatValue);
-          jdtDateTime: LRTTIField.SetValue(AObj, DateToISO8601(LJValue.UtcDateTimeValue));
-          jdtUtcDateTime: LRTTIField.SetValue(AObj, DateToISO8601(LJValue.UtcDateTimeValue));
           jdtBool: LRTTIField.SetValue(AObj, LJValue.BoolValue);
           jdtArray: LRTTIField.SetValue(AObj, nil);
           jdtObject: LRTTIField.SetValue(AObj, nil);
