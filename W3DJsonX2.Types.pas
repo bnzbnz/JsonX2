@@ -48,8 +48,11 @@ type
     , jxoRaiseException         // Re-raise exception instead of an empty result;
     , jxoReturnEmptyJsonString  // Serialize: return an empty string instead of '{}' when the object is empty
     , jxoNullify                // Serialize empty fields as null, if not they are removed
-    , jxoInnerJson              // Get the inner json strong of the object
-    , jxoPublicBindingOnly      // Only public field will be Ser/Deser
+    , jxoInnerJson              // Get the inner json string of the object
+    , jxoPublishedBinding       // Public field will be Ser/Des
+    , jxoPublicBinding          // Public field will be Ser/Des
+    , jxoProtectedBinding       // Public field will be Ser/Des
+    , jxoPrivateBinding         // Public field will be Ser/Des
   );
   TJX2Settings = set of TJX2Setting;
 

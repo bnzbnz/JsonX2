@@ -50,9 +50,9 @@ type
 
   TJsonX2 = class(TObject)
   public
-    class var FInstance: TJsonX2;
+    class var   FInstance: TJsonX2;
     constructor Create; overload;
-    destructor Destroy; override;
+    destructor  Destroy; override;
 
     function  Beautifier(const AJsonStr : string; Compact: Boolean = False; ASettings: TJX2Settings = []): string;
 
@@ -89,6 +89,24 @@ destructor TJsonX2.Destroy;
 begin
   FInstance.Free;
   inherited;
+end;
+
+function CheckVisibility(AVisibility: TMemberVisibility; ASettings: TJX2Settings): Boolean; inline;
+
+begin
+  Result := False;
+  if (
+    not (jxoPublishedBinding in ASettings)
+    and not (jxoPublicBinding in ASettings)
+    and not (jxoProtectedBinding in ASettings)
+    and not (jxoPrivateBinding in ASettings)
+  ) then Exit(True);
+
+  if (jxoPublishedBinding in ASettings) and (AVisibility = mvPublished) then Exit(True);
+  if (jxoPublicBinding in ASettings) and (AVisibility = mvPublic) then Exit(True);
+  if (jxoProtectedBinding in ASettings) and (AVisibility = mvProtected) then Exit(True);
+  if (jxoPrivateBinding in ASettings) and (AVisibility = mvPrivate) then Exit(True);
+  Exit(False);
 end;
 
 procedure  TJsonX2.Serialize(
@@ -130,10 +148,10 @@ begin
   AJsonObj.Capacity := Length(LFields);
   for LField in LFields do
   begin
-    if (jxoPublicBindingOnly in ASettings) and (LField.Visibility <> mvPublic) then Continue;
     LCurObj := nil;
     LJsonName := LField.Name;
     if LField.Name.StartsWith('_') then Continue;
+    if not CheckVisibility(LField.Visibility, ASettings) then Continue;
     LAttr := GetRTTIFieldAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
     if Assigned(GetRTTIFieldAttribute(LField, JX2AttrExclude)) then Continue;
@@ -415,7 +433,7 @@ function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings = []): stri
 begin
   Result := Serialize(Intf as TObject, ASettings);
 end;
-function TJsonX2.Serialize(Obj: TObject; ASettings: TJX2Settings = []): string;
+function TJsonX2.Serialize(Obj: TObject; ASettings: TJX2Settings): string;
 var
   LJsonObj: TJsonObject;
   LJsonPatcher: TJX2Patcher;
@@ -495,11 +513,12 @@ begin
   LFields := GetRTTIFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
+
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
     LRTTIField := GetFieldName(LFields, LJName, LExplicitName);
     if LRTTIField = Nil then Continue;
-    if (jxoPublicBindingOnly in ASettings) and (LRTTIField.Visibility <> mvPublic) then Continue;
+     if not CheckVisibility(LRTTIField.Visibility, ASettings) then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicitName then Continue;
 
     if LRTTIField.FieldType.TypeKind in [tkRecord] then
@@ -525,8 +544,8 @@ begin
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
     begin
       LRTTIField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
-      continue
-    end else
+      Continue
+    end;
 {$ENDIF}
 
     if LRTTIField.FieldType.TypeKind in [tkClass] then
@@ -556,7 +575,7 @@ begin
           LNewStrObj.Add(LPair.Name, LNewObj);
         end;
         Continue;
-      end else
+      end;
 
       if LInstance.MetaclassType = TJX2ObjList then
       begin
@@ -573,7 +592,7 @@ begin
           Deserialize(LNewObj, LJValue.ArrayValue.O[LIdx], ASettings);
         end;
         Continue
-      end else
+      end;
 
       if LInstance.MetaclassType = TJX2ValueList then
       begin
@@ -583,7 +602,7 @@ begin
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewValueList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
         Continue;
-      end else
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2VarList then
@@ -594,7 +613,7 @@ begin
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewVarList.Add(LJValue.ArrayValue.V[LIdx]);
         Continue
-      end else
+      end;
 
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
@@ -604,7 +623,7 @@ begin
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx],LJsObj.Values[LJsObj.Names[LIdx]]);
         Continue;
-      end else
+      end;
 {$ENDIF}
 
       if LInstance.MetaclassType = TJX2StrValueDic then
@@ -613,9 +632,9 @@ begin
         LRTTIField.SetValue(AObj, LNewStrValue);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
-          LNewStrValue.Add(LJsObj.Names[LIdx], LJsObj.Values[ LJsObj.Names[LIdx]].TValueValue);
+          LNewStrValue.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
         Continue
-      end else
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if LInstance.MetaclassType = TJX2StrVarDic then
@@ -626,7 +645,7 @@ begin
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx], LJsObj.Items[LIdx].Value);
         Continue;
-      end else
+      end;
 {$ENDIF}
 
       begin
@@ -688,7 +707,8 @@ begin
             Deserialize(LNewObj, LJValue.ArrayValue.O[LIdx], ASettings);
           end;
         end;
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ValueList) then
       begin
@@ -697,7 +717,8 @@ begin
         LRTTIField.SetValue(AObj, LINewValList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewValList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
-      end else
+        Continue;
+      end;
 
 {$IFNDEF JSX_NOVAR}
       if Supports(JX2AttrClass(LAttr).FClass, IJX2VarList) then
@@ -707,7 +728,8 @@ begin
         LRTTIField.SetValue(AObj, LINewVarList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewVarList.Add(LJValue.ArrayValue.V[LIdx]);
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrVarDic) then
       begin
@@ -717,7 +739,8 @@ begin
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrVarDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].VariantValue);
-      end else
+        Continue;
+      end;
 {$ENDIF}
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrValueDic) then
@@ -728,7 +751,8 @@ begin
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrValueDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
-      end else
+        Continue;
+      end;
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrObjDic) then
       begin
@@ -743,7 +767,8 @@ begin
           Supports(LNewObj, IJX2, LIntf);
           LINewStrObjDic.Add(LPair.Name, LIntf);
         end;
-      end else
+        Continue
+      end;
 
       begin
         if LJValue.ObjectValue = Nil then Continue;

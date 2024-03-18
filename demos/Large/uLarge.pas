@@ -125,7 +125,7 @@ begin
           Inc(AspectValueCount);
     Memo1.Lines.Add('eBay Aspect values count : ' + AspectValueCount.ToString + ' (TObject Created)');
     Sw.Reset; Sw.Start;
-    SaveStringToFile('Json.json', W3DJX2.Serialize(Obj, []), TEncoding.UTF8 );
+    SaveStringToFile('Json.json', W3DJX2.Serialize(Obj), TEncoding.UTF8 );
     Memo1.Lines.Add(' From Json to File :' + Sw.ElapsedMilliseconds.ToString + 'ms');
   finally
     Obj.Free;
