@@ -49,12 +49,13 @@ const
 type
 
   TJsonX2 = class(TObject)
-  public
+  strict private
     class var   FInstance: TJsonX2;
+  public
     constructor Create; overload;
     destructor  Destroy; override;
 
-    function  Beautifier(const AJsonStr : string; Compact: Boolean = False; ASettings: TJX2Settings = []): string;
+    class function Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
 
     procedure Serialize(AObj: TObject; AJsonObj: TJsonObject; AJsonPatcher: TJX2Patcher; ASettings: TJX2Settings); overload;
     function  Serialize(Obj: TObject; ASettings: TJX2Settings = []): string; overload;
@@ -190,7 +191,7 @@ begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
       begin
         if not LField.GetValue(AObj).TryAsType<TValue>(LTValue) then Continue;
-        if  not (jxoNullify in ASettings) and LTValue.IsEmpty then Continue;
+        if not (jxoNullify in ASettings) and LTValue.IsEmpty then Continue;
         AJsonObj.InternAddItem(LJsonName).TValueValue := LTValue;
       end;
       Continue;
@@ -221,7 +222,7 @@ begin
 {$IFNDEF JSX_NOVAR}
       if LCurObj.ClassType = TJX2VarList then
       begin
-        LJsonArr := TJsonArray.Create;
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity := TJX2VarList(LCurObj).Count;
         for LVariant in TJX2VarList(LCurObj) do LJsonArr.Add(LVariant);
         aJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
@@ -232,7 +233,7 @@ begin
 
       if LCurObj.ClassType = TJX2ObjList then
       begin
-        LJsonArr := TJSonArray.Create;
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity := TJX2ObjList(LCurObj).Count;
         for LObjLoopClass in TJX2ObjList(LCurObj) do
         begin
@@ -348,7 +349,7 @@ begin
 {$IFNDEF JSX_NOVAR}
       if Supports(LTypedObj, IJX2VarList) then
       begin
-        LJsonArr := TJsonArray.Create;
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity := TIJX2VarList(LTypedObj).Count;
         for LVarLoop in  TIJX2VarList(LTypedObj) do LJsonArr.Add(LVarLoop);
         AJsonObj.AddItem(LJsonName).ArrayValue := LJsonArr;
@@ -359,7 +360,7 @@ begin
 
       if Supports(LTypedObj, IJX2ObjList) then
       begin
-        LJsonArr := TJSonArray.Create;
+        LJsonArr := TJsonArray(TJsonArray.NewInstance);
         LJsonArr.Capacity := TIJX2ObjList(LTypedObj).Count;
         for LObjLoop in TIJX2ObjList(LTypedObj)do
         begin
@@ -522,21 +523,9 @@ begin
     if LRTTIField.FieldType.TypeKind in [tkRecord] then
     begin
       if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
-      begin
-        case LJValue.Typ of
-          jdtNone: LRTTIField.SetValue(AObj, nil);
-          jdtString: LRTTIField.SetValue(AObj, LJValue.Value);
-          jdtInt: LRTTIField.SetValue(AObj, LJValue.IntValue);
-          jdtLong: LRTTIField.SetValue(AObj, LJValue.LongValue);
-          jdtULong: LRTTIField.SetValue(AObj, LJValue.ULongValue);
-          jdtFloat: LRTTIField.SetValue(AObj, LJValue.FloatValue);
-          jdtBool: LRTTIField.SetValue(AObj, LJValue.BoolValue);
-          jdtArray: LRTTIField.SetValue(AObj, nil);
-          jdtObject: LRTTIField.SetValue(AObj, nil);
-        end;
-      end;
+        LRTTIField.SetValue(AObj, LJValue.TValueValue);
       Continue;
-    end else
+    end;
 
 {$IFNDEF JSX_NOVAR}
     if LRTTIField.FieldType.TypeKind in [tkVariant] then
@@ -832,21 +821,20 @@ begin
   end;
 end;
 
-function TJsonX2.Beautifier(const AJsonStr : string; Compact: Boolean = False; ASettings: TJX2Settings = []): string;
+class function TJsonX2.Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
 var
   LJsonObj: TJsonObject;
 begin
-  LJsonObj := nil;
   try
-  LJsonObj := TJsonObject(TJsonObject.NewInstance);
-  try
-    LJsonObj.FromJSON(AJsonStr);
-    Result := LJsonObj.ToJSon(Compact);
+    LJsonObj := TJsonObject(TJsonObject.NewInstance);
+    try
+      LJsonObj.FromJSON(AJsonStr);
+      Result := LJsonObj.ToJSon(Compact);
+    finally
+      LJsonObj.Free;
+    end;
   except
-    if jxoReturnEmptyJsonString in ASettings then Exit('') else Exit('{}');
-  end;
-  finally
-    LJsonObj.Free;
+    Result := '';
   end;
 end;
 
