@@ -92,9 +92,7 @@ begin
 end;
 
 function CheckVisibility(AVisibility: TMemberVisibility; ASettings: TJX2Settings): Boolean; inline;
-
 begin
-  Result := False;
   if (
     not (jxoPublishedBinding in ASettings)
     and not (jxoPublicBinding in ASettings)
@@ -140,7 +138,7 @@ var
   LStrObjLoopPair: TPair<string, TObject>;
   LObjLoopClass: TObject;
   LTValue: TValue;
-  LAttrIntf: IJX2Converter;
+  LAttrConv: IJX2Converter;
 
 begin
   if (AObj = nil) then exit;
@@ -172,13 +170,13 @@ begin
         varSmallInt, varInteger, varShortInt, varByte, varWord, varLongWord:
           AJsonObj.InternAddItem(LJsonName).IntValue := LVariant;
         varBoolean:
-          AJsonObj.InternAddItem(LJsonName).BoolValue := (LVariant);
+          AJsonObj.InternAddItem(LJsonName).BoolValue := LVariant;
         varInt64:
-          AJsonObj.InternAddItem(LJsonName).LongValue := (LVariant);
+          AJsonObj.InternAddItem(LJsonName).LongValue := LVariant;
         varUInt64:
-          AJsonObj.InternAddItem(LJsonName).ULongValue := (LVariant);
+          AJsonObj.InternAddItem(LJsonName).ULongValue := LVariant;
         varSingle, varDouble, varCurrency:
-          AJsonObj.InternAddItem(LJsonName).FloatValue := (LVariant);
+          AJsonObj.InternAddItem(LJsonName).FloatValue := LVariant;
       else
         if not (jxoNullify in ASettings) then Continue;
         AJsonObj.InternAddItem(LJsonName).VariantValue := Null;
@@ -203,7 +201,7 @@ begin
 
       LCurObj := LField.GetValue(AObj).AsObject;
 
-      if LCurObj = Nil then
+      if LCurObj = nil then
       begin
         if not (jxoNullify in ASettings) then Continue;
         AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
@@ -291,8 +289,8 @@ begin
       begin
         try
           if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
-          if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
-          LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
+          if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrConv) then Continue;
+          LJsonStr := LAttrConv.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
           AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
         except end;
         Continue;
@@ -309,7 +307,7 @@ begin
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
 
-      if LField.GetValue(AObj).AsInterface = Nil then
+      if LField.GetValue(AObj).AsInterface = nil then
       begin
         if not (jxoNullify in ASettings) then Continue;
         AJsonObj.InternAddItem(LJsonName).ObjectValue := nil;
@@ -323,8 +321,8 @@ begin
         begin
           try
            	if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
-            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
-            LJsonStr := LAttrIntf.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj));
+            if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrConv) then Continue;
+            LJsonStr := LAttrConv.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj));
             AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
           except end;
           Continue;
@@ -517,7 +515,7 @@ begin
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
     LRTTIField := GetFieldName(LFields, LJName, LExplicitName);
-    if LRTTIField = Nil then Continue;
+    if LRTTIField = nil then Continue;
      if not CheckVisibility(LRTTIField.Visibility, ASettings) then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicitName then Continue;
 
@@ -562,9 +560,9 @@ begin
       if LInstance.MetaclassType = TJX2StrObjDic then
       begin
         LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
-        if LAttr = Nil then
+        if LAttr = nil then
           raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
-        if LJValue.ObjectValue = Nil then Continue;
+        if LJValue.ObjectValue = nil then Continue;
         LNewStrObj := TJX2StrObjDic.Create([doOwnsValues]);
         LNewStrObj.Capacity := LJValue.ObjectValue.Count;
         LRTTIField.SetValue(AObj, LNewStrObj);
@@ -580,7 +578,7 @@ begin
       if LInstance.MetaclassType = TJX2ObjList then
       begin
         LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
-        if LAttr = Nil then
+        if LAttr = nil then
           raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
         LNewObjList := TJX2ObjList.Create(True);
         LRTTIField.SetValue(aObj, LNewObjList);
@@ -690,7 +688,7 @@ begin
       end;
 
       LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
-      if LAttr = Nil then
+      if LAttr = nil then
         raise Exception.Create('Interface is missing JX2AttrClass : ' + LRTTIField.Name);
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ObjList) then
@@ -733,7 +731,7 @@ begin
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrVarDic) then
       begin
-        if LJValue.ObjectValue = Nil then Continue;
+        if LJValue.ObjectValue = nil then Continue;
         LINewStrVarDic := TIJX2StrVarDic.Create;
         LRTTIField.SetValue(AObj, LINewStrVarDic);
         LJsObj := LJValue.ObjectValue;
@@ -745,7 +743,7 @@ begin
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrValueDic) then
       begin
-        if LJValue.ObjectValue = Nil then Continue;
+        if LJValue.ObjectValue = nil then Continue;
         LINewStrValueDic := TIJX2StrValueDic.Create;
         LRTTIField.SetValue(AObj, LINewStrValueDic);
         LJsObj := LJValue.ObjectValue;
@@ -756,7 +754,7 @@ begin
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2StrObjDic) then
       begin
-        if LJValue.ObjectValue = Nil then Continue;
+        if LJValue.ObjectValue = nil then Continue;
         LINewStrObjDic := TIJX2StrObjDic.Create;
         LINewStrObjDic.Capacity := LJValue.ObjectValue.Count;
         LRTTIField.SetValue(AObj, LINewStrObjDic);
@@ -771,7 +769,7 @@ begin
       end;
 
       begin
-        if LJValue.ObjectValue = Nil then Continue;
+        if LJValue.ObjectValue = nil then Continue;
         LNewObj := JX2AttrClass(LAttr).FClass.Create;
         Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
         LRTTIField.SetValue(AObj, LNewObj);
@@ -786,14 +784,13 @@ var
   LJsonObj: TJsonBaseObject;
   LObj: T;
 begin
-  Result := Nil;
   LJsonObj := Nil;
   LObj := Nil;
   try
     try
-      LJsonObj := W3DJsonX2.Obj.TJsonObject.Parse(AJsonStr);
+      LJsonObj := TJsonObject.Parse(AJsonStr);
       LObj := T.Create;
-      Deserialize(LObj, W3DJsonX2.Obj.TJsonObject(LJsonObj), ASettings);
+      Deserialize(LObj, TJsonObject(LJsonObj), ASettings);
       Result := T(LObj);
     finally
       LJsonObj.Free;
@@ -803,6 +800,7 @@ begin
     begin
       LObj.Free;
       if (jxoRaiseException in ASettings) then raise Ex;
+      Exit(nil);
     end;
   end;
 end;
@@ -817,9 +815,9 @@ begin
   LTIObj := Nil;
   try
     try
-      LJsonObj := W3DJsonX2.Obj.TJsonObject.Parse(AJsonStr);
+      LJsonObj := TJsonObject.Parse(AJsonStr);
       LTIObj := AIntfClass.Create as TObject;
-      Deserialize(LTIObj, W3DJsonX2.Obj.TJsonObject(LJsonObj),  ASettings);
+      Deserialize(LTIObj, TJsonObject(LJsonObj),  ASettings);
       supports(LTIObj, IJX2, Result);
     finally
       LJsonObj.Free;
@@ -829,6 +827,7 @@ begin
     begin
       LTIObj.Free;
       if (jxoRaiseException in ASettings) then raise Ex;
+      Exit(nil);
     end;
   end;
 end;
