@@ -31,8 +31,8 @@ uses RTTI, System.Generics.Collections, SyncObjs, W3DJsonX2.Sync;
 
 function  GetRTTIFields(aObj: TObject): TArray<TRTTIField>;
 function  GetRTTIProps(aObj: TObject): TArray<TRTTIProperty>;
-function  GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
-function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function  GetRTTIAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function  GetRTTIInstance(Field: TRTTIField) : TRttiInstanceType;
 
 {$IFNDEF JSX_NOCACHE}
 var
@@ -80,8 +80,7 @@ begin
 end;
 {$ENDIF}
 
-
-function GetRTTIFieldAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
+function GetRTTIAttribute(Field: TRTTIField; AttrClass: TClass): TCustomAttribute;
 var
   LIdx: Integer;
   LAttrs: TArray<TCustomAttribute>;
@@ -122,7 +121,7 @@ begin
 {$ENDIF}
 end;
 
-function  GetRTTIFieldInstance(Field: TRTTIField) : TRttiInstanceType;
+function GetRTTIInstance(Field: TRTTIField) : TRttiInstanceType;
 begin
 {$IFNDEF JSX_NOCACHE}
   if not _RTTIInstCacheDic.TryGetValue(Field, Result) then

@@ -376,7 +376,7 @@ begin
         AField.SetValue(ADest, TJX2StrObjDic(LObj).Clone)
       else
       begin
-        LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
+        LAttr := GetRTTIAttribute(AField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
@@ -404,10 +404,10 @@ begin
 
     if AField.GetValue(ASelf).AsInterface= nil then  Exit;
 
-    LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
+    LAttr := GetRTTIAttribute(AField, JX2AttrConv);
     if Assigned(LAttr) then
     begin
-      LAttr := GetRTTIFieldAttribute(AField, JX2AttrConv);
+      LAttr := GetRTTIAttribute(AField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
       try
@@ -472,7 +472,7 @@ begin
   for LField in W3DJsonX2.RTTI.GetRTTIFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
     begin
-      LAttr := JX2AttrConv(GetRTTIFieldAttribute(LField, JX2AttrConv));
+      LAttr := JX2AttrConv(GetRTTIAttribute(LField, JX2AttrConv));
       if Assigned(LAttr) and Assigned(LAttr.FConv) then
         if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
           if (LField.GetValue(Self).AsObject <> nil) then
@@ -844,7 +844,7 @@ begin
   for LField in W3DJsonX2.RTTI.GetRTTIFields(Self) do
     if LField.FieldType.TypeKind in [tkClass] then
     begin
-      LAttr := JX2AttrConv(GetRTTIFieldAttribute(LField, JX2AttrConv));
+      LAttr := JX2AttrConv(GetRTTIAttribute(LField, JX2AttrConv));
       if Assigned(LAttr) and Assigned(LAttr.FConv) then
         if Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then
           if (LField.GetValue(Self).AsObject <> nil) then

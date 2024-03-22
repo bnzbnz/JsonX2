@@ -151,9 +151,9 @@ begin
     LJsonName := LField.Name;
     if LField.Name.StartsWith('_') then Continue;
     if not CheckVisibility(LField.Visibility, ASettings) then Continue;
-    LAttr := GetRTTIFieldAttribute(LField, JX2AttrName);
+    LAttr := GetRTTIAttribute(LField, JX2AttrName);
     if not Assigned(LAttr) and (jxExplicitBinding in ASettings) then Continue;
-    if Assigned(GetRTTIFieldAttribute(LField, JX2AttrExclude)) then Continue;
+    if Assigned(GetRTTIAttribute(LField, JX2AttrExclude)) then Continue;
     if Assigned(LAttr) then LJsonName :=  JX2AttrName(LAttr).FName;
 
 {$IFNDEF JSX_NOVAR}
@@ -285,7 +285,7 @@ begin
         Continue;
       end;
 
-      LAttr := GetRTTIFieldAttribute(LField, JX2AttrConv);
+      LAttr := GetRTTIAttribute(LField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
         try
@@ -317,7 +317,7 @@ begin
 
       if not Supports(LField.GetValue(AObj).AsInterface, IJX2, LCurIntf) then
       begin
-        LAttr := GetRTTIFieldAttribute(LField, JX2AttrConv);
+        LAttr := GetRTTIAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
@@ -474,7 +474,7 @@ var
   LJIdx: Integer;
   LJValue: PJsonDataValue;
   LJName: string;
-  LRTTIField: TRTTIField;
+  LField: TRTTIField;
   LInstance: TRTTIInstanceType;
   LNewObj: TObject;
   LNewStrObj: TJX2StrObjDic;
@@ -499,7 +499,7 @@ var
     AExplicit := False;
     for Result in AFields do
     begin
-      AAttr := JX2AttrName(GetRTTIFieldAttribute(Result, JX2AttrName));
+      AAttr := JX2AttrName(GetRTTIAttribute(Result, JX2AttrName));
       AExplicit := (AAttr <> Nil) and (AAttr.FName = AJsonName);
       if AExplicit then Exit;
       if AJsonName = Result.Name then Exit;
@@ -515,46 +515,46 @@ begin
 
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
-    LRTTIField := GetFieldName(LFields, LJName, LExplicitName);
-    if LRTTIField = nil then Continue;
-     if not CheckVisibility(LRTTIField.Visibility, ASettings) then Continue;
+    LField := GetFieldName(LFields, LJName, LExplicitName);
+    if LField = nil then Continue;
+     if not CheckVisibility(LField.Visibility, ASettings) then Continue;
     if (jxExplicitbinding in ASettings) and not LExplicitName then Continue;
 
-    if LRTTIField.FieldType.TypeKind in [tkRecord] then
+    if LField.FieldType.TypeKind in [tkRecord] then
     begin
-      if LRTTIField.FieldType.Handle = TypeInfo(TValue) then
-        LRTTIField.SetValue(AObj, LJValue.TValueValue);
+      if LField.FieldType.Handle = TypeInfo(TValue) then
+        LField.SetValue(AObj, LJValue.TValueValue);
       Continue;
     end;
 
 {$IFNDEF JSX_NOVAR}
-    if LRTTIField.FieldType.TypeKind in [tkVariant] then
+    if LField.FieldType.TypeKind in [tkVariant] then
     begin
-      LRTTIField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
+      LField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
       Continue
     end;
 {$ENDIF}
 
-    if LRTTIField.FieldType.TypeKind in [tkClass] then
+    if LField.FieldType.TypeKind in [tkClass] then
     begin
 
       if LJValue.IsNull then
       begin
-        LRTTIField.SetValue(AObj, Nil);
+        LField.SetValue(AObj, Nil);
         Continue;
        end;
 
-      LInstance := LRTTIField.FieldType.AsInstance;
+      LInstance := LField.FieldType.AsInstance;
 
       if LInstance.MetaclassType = TJX2StrObjDic then
       begin
-        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
+        LAttr := GetRTTIAttribute(LField, JX2AttrClass);
         if LAttr = nil then
-          raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LRTTIField.Name);
+          raise Exception.Create('TJX2StrObjDic is missing JX2AttrClass : ' + LField.Name);
         if LJValue.ObjectValue = nil then Continue;
         LNewStrObj := TJX2StrObjDic.Create([doOwnsValues]);
         LNewStrObj.Capacity := LJValue.ObjectValue.Count;
-        LRTTIField.SetValue(AObj, LNewStrObj);
+        LField.SetValue(AObj, LNewStrObj);
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FClass.Create;
@@ -566,11 +566,11 @@ begin
 
       if LInstance.MetaclassType = TJX2ObjList then
       begin
-        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
+        LAttr := GetRTTIAttribute(LField, JX2AttrClass);
         if LAttr = nil then
-          raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LRTTIField.Name);
+          raise Exception.Create('TJX2ObjList is missing JX2AttrClass : ' + LField.Name);
         LNewObjList := TJX2ObjList.Create(True);
-        LRTTIField.SetValue(aObj, LNewObjList);
+        LField.SetValue(aObj, LNewObjList);
         LNewObjList.Capacity := LJValue.ArrayValue.Count;
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
         begin
@@ -584,7 +584,7 @@ begin
       if LInstance.MetaclassType = TJX2ValueList then
       begin
         LNewValueList := TJX2ValueList.Create;
-        LRTTIField.SetValue(AObj, LNewValueList);
+        LField.SetValue(AObj, LNewValueList);
         LNewValueList.Capacity := LJValue.ArrayValue.Count;
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewValueList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
@@ -595,7 +595,7 @@ begin
       if LInstance.MetaclassType = TJX2VarList then
       begin
         LNewVarList := TJX2VarList.Create;
-        LRTTIField.SetValue(AObj, LNewVarList);
+        LField.SetValue(AObj, LNewVarList);
         LNewVarList.Capacity := LJValue.ArrayValue.Count;
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewVarList.Add(LJValue.ArrayValue.V[LIdx]);
@@ -605,7 +605,7 @@ begin
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
         LNewStrVar := TJX2StrVarDic.Create;
-        LRTTIField.SetValue(AObj, LNewStrVar);
+        LField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx],LJsObj.Values[LJsObj.Names[LIdx]]);
@@ -616,7 +616,7 @@ begin
       if LInstance.MetaclassType = TJX2StrValueDic then
       begin
         LNewStrValue := TJX2StrValueDic.Create;
-        LRTTIField.SetValue(AObj, LNewStrValue);
+        LField.SetValue(AObj, LNewStrValue);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrValue.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
@@ -627,7 +627,7 @@ begin
       if LInstance.MetaclassType = TJX2StrVarDic then
       begin
         LNewStrVar := TJX2StrVarDic.Create;
-        LRTTIField.SetValue(AObj, LNewStrVar);
+        LField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx], LJsObj.Items[LIdx].Value);
@@ -636,54 +636,54 @@ begin
 {$ENDIF}
 
       begin
-        LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrConv);
+        LAttr := GetRTTIAttribute(LField, JX2AttrConv);
         if Assigned(LAttr) then
         begin
           try
            	if not Assigned(JX2AttrConv(LAttr)) then Continue;
             if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
-            LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, nil, LRTTIField, '', AJsonObj, LJValue));
-            LRTTIField.SetValue(AObj, LNewObj);
+            LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, nil, LField, '', AJsonObj, LJValue));
+            LField.SetValue(AObj, LNewObj);
           except end;
           Continue;
         end;
 
         LNewObj := LInstance.MetaclassType.Create;
         Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
-        LRTTIField.SetValue(AObj, LNewObj);
+        LField.SetValue(AObj, LNewObj);
         Continue
       end;
     end;
 
-    if LRTTIField.FieldType.TypeKind in [tkInterface] then
+    if LField.FieldType.TypeKind in [tkInterface] then
     begin
 
       if LJValue.IsNull then
       begin
-        LRTTIField.SetValue(aObj, Nil);
+        LField.SetValue(aObj, Nil);
         Continue;
       end;
 
-      LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrConv);
+      LAttr := GetRTTIAttribute(LField, JX2AttrConv);
       if Assigned(LAttr) then
       begin
         try
           if not Assigned(JX2AttrConv(LAttr)) then Continue;
           if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrIntf) then Continue;
-          LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, Self, LRTTIField, '', AJsonObj));
-          LRTTIField.SetValue(aObj, LNewObj);
+          LNewObj := LAttrIntf.OnDeserialize(TJX2DataBlock.Create(ASettings, Self, LField, '', AJsonObj));
+          LField.SetValue(aObj, LNewObj);
         except end;
         Continue;
       end;
 
-      LAttr := GetRTTIFieldAttribute(LRTTIField, JX2AttrClass);
+      LAttr := GetRTTIAttribute(LField, JX2AttrClass);
       if LAttr = nil then
-        raise Exception.Create('Interface is missing JX2AttrClass : ' + LRTTIField.Name);
+        raise Exception.Create('Interface is missing JX2AttrClass : ' + LField.Name);
 
       if Supports(JX2AttrClass(LAttr).FClass, IJX2ObjList) then
       begin;
         LINewObjList := TIJX2ObjList.Create;
-        LRTTIField.SetValue(AObj, LINewObjList);
+        LField.SetValue(AObj, LINewObjList);
         LINewObjList.Capacity := LJValue.ArrayValue.Count;
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
         begin
@@ -701,7 +701,7 @@ begin
       begin
         LINewValList := TIJX2ValueList.Create;
         LINewValList.Capacity := LJValue.ArrayValue.Count;
-        LRTTIField.SetValue(AObj, LINewValList);
+        LField.SetValue(AObj, LINewValList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewValList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
         Continue;
@@ -712,7 +712,7 @@ begin
       begin
         LINewVarList := TIJX2VarList.Create;
         LINewVarList.Capacity := LJValue.ArrayValue.Count;
-        LRTTIField.SetValue(AObj, LINewVarList);
+        LField.SetValue(AObj, LINewVarList);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewVarList.Add(LJValue.ArrayValue.V[LIdx]);
         Continue;
@@ -722,7 +722,7 @@ begin
       begin
         if LJValue.ObjectValue = nil then Continue;
         LINewStrVarDic := TIJX2StrVarDic.Create;
-        LRTTIField.SetValue(AObj, LINewStrVarDic);
+        LField.SetValue(AObj, LINewStrVarDic);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrVarDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].VariantValue);
@@ -734,7 +734,7 @@ begin
       begin
         if LJValue.ObjectValue = nil then Continue;
         LINewStrValueDic := TIJX2StrValueDic.Create;
-        LRTTIField.SetValue(AObj, LINewStrValueDic);
+        LField.SetValue(AObj, LINewStrValueDic);
         LJsObj := LJValue.ObjectValue;
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrValueDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
@@ -746,7 +746,7 @@ begin
         if LJValue.ObjectValue = nil then Continue;
         LINewStrObjDic := TIJX2StrObjDic.Create;
         LINewStrObjDic.Capacity := LJValue.ObjectValue.Count;
-        LRTTIField.SetValue(AObj, LINewStrObjDic);
+        LField.SetValue(AObj, LINewStrObjDic);
         for LPair in LJValue.ObjectValue do
         begin
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
@@ -761,7 +761,7 @@ begin
         if LJValue.ObjectValue = nil then Continue;
         LNewObj := JX2AttrClass(LAttr).FClass.Create;
         Deserialize(LNewObj, LJValue.ObjectValue, ASettings);
-        LRTTIField.SetValue(AObj, LNewObj);
+        LField.SetValue(AObj, LNewObj);
       end;
 
     end;
