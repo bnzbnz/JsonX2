@@ -45,7 +45,6 @@ type
 implementation
 uses
     Classes
-  , JsonX2
   , JsonX2.Obj
   ;
 

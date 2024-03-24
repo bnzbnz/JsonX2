@@ -49,7 +49,7 @@ type
   function  URLEncode(const ToEncode: string): string;
   // Strings
   function  LoadStringFromFile(Filename: string; Encoding: TEncoding): string;
-  function SaveStringToFile(Filename: string; Str: string; Encoding: TEncoding): Integer;
+  function  SaveStringToFile(Filename: string; Str: string; Encoding: TEncoding): Integer;
   // Tools
   function  StringGUID: string;
   function  DelphiGUID: string;

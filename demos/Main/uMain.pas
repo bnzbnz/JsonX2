@@ -127,9 +127,9 @@ type
     [JX2AttrClass(TIJX2StrObjDic, TISimpleIntf)]
     IStrObjDic: IJX2StrObjDic;                              // An Interfaced string/Object Dictionary
 
-    //Generic Object/Inteface CallBack Converter
+    //Generic Object/Interface CallBack Converter
 
-    [JX2AttrConv(TIStringListConv)]                         // an random object type with its own converters
+    [JX2AttrConv(TIStringListConv)]                         // an random object type with its own converter
     TSL: TStringList;                                       // see Jsonx2.conv
 
   end;

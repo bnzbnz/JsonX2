@@ -1,4 +1,4 @@
-program Large;
+﻿program Large;
 
 uses
   System.StartUpCopy,
