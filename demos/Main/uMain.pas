@@ -75,19 +75,19 @@ type
 
     // The fields order does not matter !!!
 
-    valNull: TValue;                                        // A null value, serialized only if with jxoNullify option
-    valString: TValue;                                      // string
-    valInteger: TValue;                                     // Integer
-    valBoolean: TValue;                                     // Boolean
+    vNull: TValue;                                          // A null value, serialized only if with jxoNullify option
+    vString: TValue;                                        // string
+    vInteger: TValue;                                       // Integer
+    vBoolean: TValue;                                       // Boolean
     {$IFNDEF JSX_NOVAR}                                     // => Variant Support may be disabled
-    valVariantString: Variant;                              // string;
+    varString: Variant;                                     // string;
     [JX2AttrExclude]                                        // The subsequent field will not Ser/Deser (explicit)
-    valDouble: Variant;                                     // Double
-    valDateTime: variant;                                   // DateTime, in fact this is a Double
-    valUTCDateTime: variant;                                // DateTime, ISO 8601 UTC, standard time string
+    varDouble: Variant;                                     // Double
+    varDateTime: variant;                                   // DateTime, in fact this is a Double
     {$ENDIF}
+    vUTCDateTime: variant;                                  // DateTime, ISO 8601 UTC, standard time string
     [JX2AttrName('type')]                                   // Map the following Field to this Json value name
-    valType: TValue;                                        // Json "type" = RTTIField "valType"
+    vType: TValue;                                          // Json "type" = RTTIField "valType"
                                                             // Object and Interface definition
     ObjectType: TSimpleObject;                              // An object (TSimpleObject inherits from JX2)
     [JX2AttrClass(TISimpleIntf)]                            // An generic interface IJX2 of TISimpleInterface type
@@ -129,7 +129,7 @@ type
 
     //Generic Object/Inteface CallBack Converter
 
-    [JX2AttrConv(TStringListConv)]                         // an random object type with its own converters
+    [JX2AttrConv(TIStringListConv)]                         // an random object type with its own converters
     TSL: TStringList;                                       // see Jsonx2.conv
 
   end;
@@ -162,17 +162,17 @@ begin
 
   //Primitives
 
-  Obj.valNull := nil; // a Null (nil) value
-  Obj.valString := 'Value : UTF8:Ř-鱇-😃'; // a string UTF8
-  Obj.valInteger := 15; // an Integer
+  Obj.vNull := nil;
+  Obj.vString := 'Value : UTF8:Ř-鱇-😃';
+  Obj.vInteger := 15;
+  Obj.vBoolean := False;
   {$IFNDEF JSX_NOVAR}
-  Obj.valUTCDateTime := DateToIso8601( TTimeZone.Local.ToUniversalTime(Now) ); // an UTC ISO8601 DateTime (string);
-  Obj.valVariantString := 'Variant : UTF8:Ř-鱇-😃'; // variant string
-  Obj.valBoolean := False;  // Boolean value
-  Obj.valDouble := 2.2;     // Double value
-  Obj.valDateTime := Double(Now); // Datetime: double value
+  Obj.varString := 'Variant : UTF8:Ř-鱇-😃';
+  Obj.varDouble := 2.2;
+  Obj.varDateTime := Now;
   {$ENDIF}
-  Obj.valType := 'erroneous delphi field name...'; // string of a renamed field
+  Obj.vUTCDateTime := DateToIso8601( TTimeZone.Local.ToUniversalTime(Now) );
+  Obj.vType := 'erroneous delphi field name...';
 
   // Object/Interface
 
@@ -298,11 +298,11 @@ begin
 
   Memo3.Lines.Add('Read few values from Object:');
 
-  Memo3.Lines.Add('String (TValue): ' + Obj.valString.AsString);
+  Memo3.Lines.Add('String (TValue): ' + Obj.vString.AsString);
   {$IFNDEF JSX_NOVAR}
-  Memo3.Lines.Add('String (Variant): ' + Obj.valVariantString);
-  Memo3.Lines.Add('Double: ' + FloatToStr(Obj.valDouble));
-  Memo3.Lines.Add('UTC: ' + Obj.valUTCDateTime);
+  Memo3.Lines.Add('String (Variant): ' + Obj.varString);
+  Memo3.Lines.Add('Double: ' + FloatToStr(Obj.varDouble));
+  Memo3.Lines.Add('UTC: ' + Obj.vUTCDateTime);
  {$ENDIF}
 
   Memo3.Lines.Add('ObjectType.var1: ' + Obj.ObjectType.Var1.ToString);

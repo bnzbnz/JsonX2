@@ -35,7 +35,7 @@ uses
 
 type
 
-  TStringListConv = class(TInterfacedObject, IJX2Converter)
+  TIStringListConv = class(TInterfacedObject, IJX2Converter)
     function  OnClone(AData: TJX2DataBlock): TObject;
     function  OnSerialize(AData: TJX2DataBlock): string;
     function  OnDeserialize(AData: TJX2DataBlock) : TObject;
@@ -54,14 +54,14 @@ uses
 
 { TIStringListConv }
 
-function TStringListConv.OnClone(AData: TJX2DataBlock): TObject;
+function TIStringListConv.OnClone(AData: TJX2DataBlock): TObject;
 begin
   Result := TStringList.Create;
   for var LStr in TStringList(AData.SelfObj) do
     TStringList(Result).Add(LStr);
 end;
 
-function TStringListConv.OnSerialize(AData: TJX2DataBlock): string;
+function TIStringListConv.OnSerialize(AData: TJX2DataBlock): string;
 var
   LArr: TJSonArray;
   LStr: string;
@@ -72,7 +72,7 @@ begin
   LArr.Free;
 end;
 
-function TStringListConv.OnDeserialize(AData: TJX2DataBlock): TObject;
+function TIStringListConv.OnDeserialize(AData: TJX2DataBlock): TObject;
 var
   LStr: string;
 begin
@@ -80,7 +80,7 @@ begin
   for LStr in AData.JsonVal.ArrayValue do TStringList(Result).Add(LStr);
 end;
 
-procedure TStringListConv.OnDestroy(AData: TJX2DataBlock);
+procedure TIStringListConv.OnDestroy(AData: TJX2DataBlock);
 begin
 end;
 

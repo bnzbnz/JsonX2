@@ -302,8 +302,8 @@ begin
         try
           if not Assigned(JX2AttrConv(LAttr).FConv) then Continue;
           if not Supports(JX2AttrConv(LAttr).FConv.Create, IJX2Converter, LAttrConv) then Continue;
-          //LJsonStr := LAttrConv.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
-          // AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
+          LJsonStr := LAttrConv.OnSerialize(TJX2DataBlock.Create(ASettings, LCurObj, LField, ''{JsonStr}, nil{JsonObj}, nil{AJsonVal}, AJsonPatcher));
+          AJsonObj.AddItem(LJsonName).Value := AJsonPatcher.Encode(LJsonStr, '"', '"');
         except end;
         Continue;
       end;
