@@ -57,13 +57,11 @@ type
     destructor  Destroy; override;
     class function Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
 
-    function  Serialize(AObj: TObject; ASettings: TJX2Settings; AStats: TJX2Stats = nil): string; overload;
-    function  Serialize(AObj: TObject; ASettings: TJX2Settings = []): string; overload;
+    function  Serialize(AObj: TObject; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): string; overload;
     function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string; overload;
     function  Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: TJX2Stats = nil): string; overload;
 
-    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []): T; overload;
-    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats = nil): T; overload;
+    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): T; overload;
     function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
     function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats = nil): IJX2; overload;
   end;
@@ -492,18 +490,6 @@ begin
   end;
 end;
 
-function TJsonX2.Serialize(AObj: TObject; ASettings: TJX2Settings): string;
-var
-  LStats: TJX2Stats;
-begin
-  LStats := TJX2Stats.Create;
-  try
-    Result := Serialize(AObj, ASettings, LStats);
-  finally
-    LStats.Free;
-  end;
-end;
-
 procedure TJsonX2.Deserialize(
             AObj: TObject;
             AJsonObj: TJsonObject;
@@ -836,18 +822,6 @@ begin
 
     end;
    end;
-end;
-
-function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings = []): T;
-var
-  LStats: TJX2Stats;
-begin
-  LStats := TJX2Stats.Create;
-  try
-    Result := Deserialize<T>(AJsonStr, ASettings, LStats);
-  finally
-    LStats.Free;
-  end;
 end;
 
 function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats ): T;

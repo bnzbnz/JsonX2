@@ -136,18 +136,17 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\..\W3DJsonX2.Obj.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.RTTI.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Types.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Utils.pas"/>
-        <DCCReference Include="..\..\W3DCloneable.pas"/>
         <DCCReference Include="uMain.pas">
             <Form>Form2</Form>
         </DCCReference>
-        <DCCReference Include="..\..\W3DJsonX2.Conv.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Patch.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Sync.pas"/>
+        <DCCReference Include="..\..\JsonX2.Conv.pas"/>
+        <DCCReference Include="..\..\JsonX2.Obj.pas"/>
+        <DCCReference Include="..\..\JsonX2.pas"/>
+        <DCCReference Include="..\..\JsonX2.Patch.pas"/>
+        <DCCReference Include="..\..\JsonX2.RTTI.pas"/>
+        <DCCReference Include="..\..\JsonX2.Sync.pas"/>
+        <DCCReference Include="..\..\JsonX2.Types.pas"/>
+        <DCCReference Include="..\..\JsonX2.Utils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -189,6 +188,18 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="..\Main.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>Main.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\Main.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>Main.rsm</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Linux64\Debug\Main" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Linux64\Debug\Main" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Linux64">
@@ -198,12 +209,6 @@
                 </DeployFile>
                 <DeployFile LocalName="Win32\Debug\Main.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Win64\Debug\Main.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName="Win64\Debug\Main.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win64">
-                        <RemoteName>Main.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>

@@ -12,13 +12,12 @@ uses
   {$ENDIF}
   , System.Generics.Collections
   , RTTI
-  , W3DJsonX2.Obj
-  , W3DJsonX2
-  , W3DJsonX2.RTTI
-  , W3DJsonX2.Types
-  , W3DJsonX2.Conv
-  , W3DJsonX2.Utils
-  , W3DCloneable
+  , JsonX2.Obj
+  , JsonX2
+  , JsonX2.RTTI
+  , JsonX2.Types
+  , JsonX2.Conv
+  , JsonX2.Utils
   ;
 
 type
@@ -42,27 +41,17 @@ type
 //----------------------------------------------------------------------------//
 // Json Objectx Definition :
 
- IGenericInterface = interface
-  ['{70DE2C9D-81FD-4524-B886-C48D71A6BEE0}']
- end;
-
- TGenericInterfacedObject = class(TInterfacedObject, IGenericInterface)
-    var AValue: Integer;
- end;
 
   // A really simple container
-  TSimpleSubObject = Class(TJX2)
-    var3: TValue;
-    var4: TValue;
+  TSimpleSubObject = Class(TJX2)                            // A really simple class (TJX2)
+    var3: TValue;                                           // string
+    var4: TValue;                                           // string... or anything else
   end;
 
-  // Interface on a TSimpleObject
+  // Interface on a TSimpleObject                           // Generic interface
   ISimpleObject = interface(IInterface) ['{D259E2E2-2EDD-456D-A4F2-4AD9AFA6494C}'] end;
 
-  // a simple object with property and sub. object
-  // ALL OBJECTS AND INTERFACED OBJECTS ARE OWNED
-  // It means that you don't have to take care of their destruction (freeing)
-  TSimpleObject = class(TJX2)                                   // TSimple Object, must inherit from TIJX2 if interfaced
+  TSimpleObject = class(TJX2)                               // TSimple Object, must inherit from TIJX2 if interfaced
   private
     [JX2AttrName('var1')]                                                       // Fvar1 field name will be mapped as json "var" name
     Fvar1: TValue;                                                              // Fvar1 varianle
@@ -74,73 +63,74 @@ type
     property Var1: TValue read GetVar1 write SetVar1;                           // Property Var1
   end;
 
-  TISimpleIntf = class(TIJX2)
+  TISimpleIntf = class(TIJX2, ISimpleObject)
     var5 : TValue;
   end;
 
-  // A complex object definitionr
+  // ALL OBJECTS AND INTERFACED OBJECTS ARE OWNED
+  // It means that you don't have to take care of their destruction (freeing)
 
-  TComplexObj = class(TJX2)                                                     // inherit from TJX2)
+  TComplexObj = class(TJX2)                                 // A complex object definition, which herits from TJX2
   public
 
-    // The fields order does not matter
+    // The fields order does not matter !!!
 
-    valNull: TValue;                                                            // null value
-    valString: TValue;                                                          // string
-    valInteger: TValue;
-    valBoolean: TValue;                                                         // Integer
-    {$IFNDEF JSX_NOVAR}
-    valVariantString: Variant;                                                  // variant: string;
-    [JX2AttrExclude]                                                        // Boolean
-    valDouble: Variant;                                                         // Double
-    valDateTime: variant;                                                       // DateTime in fact Double
-    valUTCDateTime: variant;                                                    // DateTime ISO 8601 UTC, standard
+    valNull: TValue;                                        // A null value, serialized only if with jxoNullify option
+    valString: TValue;                                      // string
+    valInteger: TValue;                                     // Integer
+    valBoolean: TValue;                                     // Boolean
+    {$IFNDEF JSX_NOVAR}                                     // => Variant Support may be disabled
+    valVariantString: Variant;                              // string;
+    [JX2AttrExclude]                                        // The subsequent field will not Ser/Deser (explicit)
+    valDouble: Variant;                                     // Double
+    valDateTime: variant;                                   // DateTime, in fact this is a Double
+    valUTCDateTime: variant;                                // DateTime, ISO 8601 UTC, standard time string
     {$ENDIF}
-    [JX2AttrName('type')]
-    valType: TValue;                                                             // A TValue 'valType' mapped to Json 'type'
-                                                                            // Object and Interface definition
-    ObjectType: TSimpleObject;
-    [JX2AttrClass(TISimpleIntf)]                                               // The interfaced object of the interface
-    IntfType: IJX2;
+    [JX2AttrName('type')]                                   // Map the following Field to this Json value name
+    valType: TValue;                                        // Json "type" = RTTIField "valType"
+                                                            // Object and Interface definition
+    ObjectType: TSimpleObject;                              // An object (TSimpleObject inherits from JX2)
+    [JX2AttrClass(TISimpleIntf)]                            // An generic interface IJX2 of TISimpleInterface type
+    IntfType: IJX2;                                         // IJX2
 
     {$IFNDEF JSX_NOVAR}                                                                            //List of values (array) :
-    VaRList: TJX2VarList;
+    VaRList: TJX2VarList;                                   // Variants List
     {$ENDIF}
-    VaLlist: TJX2ValueList;                                                     // TValue List
+    VaLlist: TJX2ValueList;                                 // TValues List
 
     {$IFNDEF JSX_NOVAR}
-    [JX2AttrClass(TIJX2VaRList)]                                                // Object mapped to the variant list interface
-    IVaRlist: IJX2VaRList;
-    {$ENDIF}                                                                    // Interfaced variant list
-    [JX2AttrClass(TIJX2ValueList)]                                              // Object mapped to the TValue list interface
-    IVaLlist: IJX2ValueList;                                                    // Interfaced TValue list
+    [JX2AttrClass(TIJX2VaRList)]                            // Variant Interfaced List :
+    IVaRlist: IJX2VaRList;                                  // AttrClass defined the class associated to the interface
+    {$ENDIF}
+    [JX2AttrClass(TIJX2ValueList)]                          // Variant Interfaced List
+    IVaLlist: IJX2ValueList;                                // AttrClass defines the class associated to the interface
 
     // List of Objects;
-    [JX2AttrClass(TSimpleObject)]
-    ObjList: TJX2ObjList;
-    [JX2AttrClass(TIJX2ObjList, TISimpleIntf)]                                 // Define the Interface object of the IObjList interface and the contained one.
-    IObjList: IJX2ObjList;
+    [JX2AttrClass(TSimpleObject)]                           // Objects List
+    ObjList: TJX2ObjList;                                   // AttrClass defines the list contains
+    [JX2AttrClass(TIJX2ObjList, TISimpleIntf)]              // Same but Interfaced :
+    IObjList: IJX2ObjList;                                  // The Interface class and the list content
 
     // Dictionary of string/Values
     {$IFNDEF JSX_NOVAR}
-    StrVarDic: TJX2StrVarDic;                                                   // a string/variant dictionnary
+    StrVarDic: TJX2StrVarDic;                               // A string/Variant Dictionary
     {$ENDIF}
-    StrValueDic: TJX2StrValueDic;                                               // a string/TValue dictionnary
-    [JX2AttrClass(TSimpleObject)]                                              // Define the object contained in the following dictionnary :
-    StrObjDic: TJX2StrObjDic;                                                   // a string/TObject dictionnary
+    StrValueDic: TJX2StrValueDic;                           // A string/TValueariant Dictionary
+    [JX2AttrClass(TSimpleObject)]
+    StrObjDic: TJX2StrObjDic;                               // A String/Object Dictionary
     {$IFNDEF JSX_NOVAR}
-    [JX2AttrClass(TIJX2StrVarDic)]
-    IStrVarDic: IJX2StrVarDic;                                                  //Same with interfaced object
+    [JX2AttrClass(TIJX2StrVarDic)]                          // An Interfaced string/Variant Dictionary
+    IStrVarDic: IJX2StrVarDic;
     {$ENDIF}
     [JX2AttrClass(TIJX2StrValueDic)]
-    IStrValueDic: IJX2StrValueDic;
-    [JX2AttrClass(TIJX2StrObjDic, TISimpleIntf)]                               // Define the objext type and containned objects of the following Interfaced dictionnary :
-    IStrObjDic: IJX2StrObjDic;
+    IStrValueDic: IJX2StrValueDic;                          // An Interfaced string/TValue Dictionary
+    [JX2AttrClass(TIJX2StrObjDic, TISimpleIntf)]
+    IStrObjDic: IJX2StrObjDic;                              // An Interfaced string/Object Dictionary
 
     //Generic Object/Inteface CallBack Converter
 
-    [JX2AttrConv(TIStringListConv)]
-    TSL: TStringList;
+    [JX2AttrConv(TStringListConv)]                         // an random object type with its own converters
+    TSL: TStringList;                                       // see Jsonx2.conv
 
   end;
 
@@ -158,7 +148,6 @@ var
   Obj, CloneObj, LObj:  TComplexObj;
   Simple: TSimpleObject;
   ISimple: TISimpleIntf;
-  FS:  TFileStream;
 begin
 
   Memo1.Lines.Clear;
@@ -280,15 +269,15 @@ begin
 
   // Obj Serialization
 
-  Json := W3DJX2.Beautifier(W3DJX2.Serialize(Obj, []), True);
+  Json := JX2.Beautifier(JX2.Serialize(Obj, []), True);
   Memo1.Lines.Add( 'Object Creation (generate Beauty.json file), Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
   SaveStringToFile('Beauty.json', Json, TEncoding.UTF8);
 
   // Cloning through serialization
-  CloneObj := W3DJX2.Deserialize<TComplexObj>(Json, []);
-  Json := W3DJX2.Beautifier(W3DJX2.Serialize(CloneObj, []), True);
+  CloneObj := JX2.Deserialize<TComplexObj>(Json, []);
+  Json := JX2.Beautifier(JX2.Serialize(CloneObj, []), True);
   Memo1.Lines.Add( 'Cloned Object (Json Des/Ser), New Cloned Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
@@ -296,13 +285,13 @@ begin
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
   Memo1.Lines.Add( 'Natively Cloned Object, New Cloned Object is :');
-  Json := W3DJX2.Beautifier(W3DJX2.Serialize(CloneObj), True);
+  Json := JX2.Beautifier(JX2.Serialize(CloneObj), True);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
   // so Beautyful !!! :)
   Memo2.Lines.Add('Json Beautifier :');
-  Memo2.Lines.Add( W3DJX2.Beautifier(Json, False) );
+  Memo2.Lines.Add( JX2.Beautifier(Json, False) );
 
 //----------------------------------------------------------------------------//
 
@@ -352,11 +341,11 @@ begin
   Json := LoadStringFromFile('Beauty.json', TEncoding.UTF8);
 
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
-  Memo4.Lines.Add( W3DJX2.Beautifier(Json) );
+  Memo4.Lines.Add( JX2.Beautifier(Json) );
 
   Memo1.Lines.Add('Deserialize Object from Beauty.json, New Object is :');
-  LObj := W3DJX2.Deserialize<TComplexObj>(Json);
-  Json :=  W3DJX2.Beautifier(W3DJX2.Serialize(LObj, []), True);
+  LObj := JX2.Deserialize<TComplexObj>(Json);
+  Json :=  JX2.Beautifier(JX2.Serialize(LObj, []), True);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
 
   LObj.Free;
