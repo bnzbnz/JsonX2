@@ -32,12 +32,9 @@ interface
 
 uses
     Classes
-    , RTTI
     , System.Generics.Collections
-    , System.TypInfo
     , JsonX2.Obj
     , JsonX2.Types
-    , JsonX2.Conv
     , JsonX2.Patch
     ;
 
@@ -76,14 +73,17 @@ var
 
 implementation
 uses
-    DateUtils
+    RTTI
+  , DateUtils
   , SysUtils
   , System.Diagnostics
+  , System.TypInfo
 {$IFNDEF JSX_NOVAR}
   , Variants
 {$ENDIF}
   , JsonX2.Utils
   , JsonX2.RTTI
+  , JsonX2.Conv
   ;
 
 {$REGION 'TJsonX2'}
@@ -897,8 +897,8 @@ begin
     try
       if Assigned(AStats) then
       begin
-        AStats.DurationMS := 0;
-        LWatch.Start;
+        AStats.Clear;
+        LWatch := TStopwatch.StartNew;
       end;
       LJsonObj := TJsonObject.Parse(AJsonStr);
       LTIObj := AIntfClass.Create as TObject;

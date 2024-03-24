@@ -5,8 +5,8 @@
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Linux64</Platform>
-        <TargetedPlatforms>131</TargetedPlatforms>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>Large.dpr</MainSource>
     </PropertyGroup>
@@ -116,7 +116,9 @@
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_DcuOutput>../../../</DCC_DcuOutput>
+        <DCC_ExeOutput>../.</DCC_ExeOutput>
+        <DCC_MapFile>3</DCC_MapFile>
+        <DCC_BplOutput>.\$(Platform)\$(Config)</DCC_BplOutput>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -138,15 +140,14 @@
             <Form>Form2</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="..\..\W3DCloneable.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Conv.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Obj.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.RTTI.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Types.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Utils.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Patch.pas"/>
-        <DCCReference Include="..\..\W3DJsonX2.Sync.pas"/>
+        <DCCReference Include="..\..\JsonX2.Conv.pas"/>
+        <DCCReference Include="..\..\JsonX2.Obj.pas"/>
+        <DCCReference Include="..\..\JsonX2.pas"/>
+        <DCCReference Include="..\..\JsonX2.Patch.pas"/>
+        <DCCReference Include="..\..\JsonX2.RTTI.pas"/>
+        <DCCReference Include="..\..\JsonX2.Sync.pas"/>
+        <DCCReference Include="..\..\JsonX2.Types.pas"/>
+        <DCCReference Include="..\..\JsonX2.Utils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -188,13 +189,19 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Large.exe" Configuration="Debug" Class="ProjectOutput"/>
-                <DeployFile LocalName="Large.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
+                <DeployFile LocalName="..\Large.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
                         <RemoteName>Large.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="..\Large.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>Large.rsm</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Large.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Large.exe" Configuration="Release" Class="ProjectOutput"/>
                 <DeployFile LocalName="Large" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Large" Configuration="Release" Class="ProjectOutput"/>
@@ -1148,7 +1155,7 @@
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
             </Deployment>
             <Platforms>
-                <Platform value="Linux64">True</Platform>
+                <Platform value="Linux64">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>

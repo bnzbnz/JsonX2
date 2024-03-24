@@ -4,15 +4,14 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   uLarge in 'uLarge.pas' {Form2},
-  W3DCloneable in '..\..\W3DCloneable.pas',
-  W3DJsonX2.Conv in '..\..\W3DJsonX2.Conv.pas',
-  W3DJsonX2.Obj in '..\..\W3DJsonX2.Obj.pas',
-  W3DJsonX2 in '..\..\W3DJsonX2.pas',
-  W3DJsonX2.RTTI in '..\..\W3DJsonX2.RTTI.pas',
-  W3DJsonX2.Types in '..\..\W3DJsonX2.Types.pas',
-  W3DJsonX2.Utils in '..\..\W3DJsonX2.Utils.pas',
-  W3DJsonX2.Patch in '..\..\W3DJsonX2.Patch.pas',
-  W3DJsonX2.Sync in '..\..\W3DJsonX2.Sync.pas';
+  JsonX2.Conv in '..\..\JsonX2.Conv.pas',
+  JsonX2.Obj in '..\..\JsonX2.Obj.pas',
+  JsonX2 in '..\..\JsonX2.pas',
+  JsonX2.Patch in '..\..\JsonX2.Patch.pas',
+  JsonX2.RTTI in '..\..\JsonX2.RTTI.pas',
+  JsonX2.Sync in '..\..\JsonX2.Sync.pas',
+  JsonX2.Types in '..\..\JsonX2.Types.pas',
+  JsonX2.Utils in '..\..\JsonX2.Utils.pas';
 
 {$R *.res}
 
