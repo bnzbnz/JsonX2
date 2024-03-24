@@ -58,12 +58,10 @@ type
     class function Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
 
     function  Serialize(AObj: TObject; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): string; overload;
-    function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []): string; overload;
-    function  Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: TJX2Stats = nil): string; overload;
-
+    function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): string; overload;
     function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): T; overload;
-    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2; overload;
-    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats = nil): IJX2; overload;
+    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): IJX2; overload;
+
   end;
 
 var
@@ -439,23 +437,6 @@ begin
   end; // for LField in LFields do
 end;
 
-function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings): string;
-var
-  LStats: TJX2Stats;
-begin
-  LStats := TJX2Stats.Create;
-  try
-    Result := Serialize(Intf as TObject, ASettings, LStats);
-  finally
-    LStats.Free;
-  end;
-end;
-
-function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: TJX2Stats): string;
-begin
-  Result := Serialize(Intf as TObject, ASettings, AStats);
-end;
-
 function TJsonX2.Serialize(AObj: TObject; ASettings: TJX2Settings; AStats: TJX2Stats): string;
 var
   LJsonObj: TJsonObject;
@@ -488,6 +469,11 @@ begin
     on Ex: Exception do
       if (jxoRaiseException in ASettings) then raise Ex;
   end;
+end;
+
+function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: TJX2Stats): string;
+begin
+  Result := Serialize(Intf as TObject, ASettings, AStats);
 end;
 
 procedure TJsonX2.Deserialize(
@@ -889,18 +875,6 @@ begin
       if (jxoRaiseException in ASettings) then raise Ex;
       Exit(nil);
     end;
-  end;
-end;
-
-function TJsonX2.Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []): IJX2;
-var
-  LStats: TJX2Stats;
-begin
-  LStats := TJX2Stats.Create;
-  try
-    Result := Deserialize(AIntfClass, AJsonStr, ASettings, LStats);
-  finally
-    LStats.Free
   end;
 end;
 
