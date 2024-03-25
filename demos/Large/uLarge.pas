@@ -3,7 +3,8 @@ unit uLarge;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  System.SysUtils, System.Types, System.UITypes, System.Classes,
+  System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Layouts,
   System.Generics.Collections, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
   FMX.Controls.Presentation, FMX.StdCtrls
@@ -25,7 +26,7 @@ type
     { Private declarations }
   public
     { Public declarations }
-    procedure ShowStats(AStats: TJX2Stats);
+    procedure ShowStats(AStats: IJX2Stats);
   end;
 
   FvalueConst = class(TJX2)
@@ -36,7 +37,7 @@ type
   FvalueConstraint = class(TJX2)
     localizedValue: TValue;
     [JX2AttrClass(FvalueConst)]
-    valueConstraints : TJX2ObjList;
+    valueConstraints: TJX2ObjList;
     applicableForLocalizedAspectName: TValue;
     applicableForLocalizedAspectValues: TJX2ValueList;
   end;
@@ -98,12 +99,16 @@ type
     function GetcategoryTreeId: TValue;
     function GetcategoryTreeVersion: TValue;
     function GetcategoryAspects: TJX2ObjList;
-    property categoryTreeId: TValue read GetcategoryTreeId write SetcategoryTreeId;
-    property categoryTreeVersion: TValue read GetcategoryTreeVersion write SetcategoryTreeVersion;
-    property categoryAspects: TJX2ObjList read GetcategoryAspects write SetcategoryAspects;
+    property categoryTreeId: TValue read GetcategoryTreeId write
+    SetcategoryTreeId;
+    property categoryTreeVersion: TValue read GetcategoryTreeVersion write
+    SetcategoryTreeVersion;
+    property categoryAspects: TJX2ObjList read GetcategoryAspects write
+    SetcategoryAspects;
   end;
 
-  TIfetchItemAspectsContentType = class(TIJX2, IJX2, IfetchItemAspectsContentType)
+  TIfetchItemAspectsContentType = class(TIJX2, IJX2,
+      IfetchItemAspectsContentType)
     [JX2AttrName('categoryTreeId')]
     FcategoryTreeId: TValue;
     [JX2AttrName('categoryTreeVersion')]
@@ -124,25 +129,33 @@ var
 
 implementation
 uses
-    System.Diagnostics
+  System.Diagnostics
   , JsonX2.Utils
   ;
 
 {$R *.fmx}
+
+procedure TForm2.ShowStats(AStats: IJX2Stats);
+begin
+  Memo1.Lines.Add('  Operations: ' + AStats.OpsCount.ToString);
+  Memo1.Lines.Add(Format('  Duration: %dms: ', [AStats.DurationMS]));
+  Memo1.Lines.Add('  Variants: ' + AStats.VariantCount.ToString);
+  Memo1.Lines.Add('  TValue: ' + AStats.TValueCount.ToString);
+end;
+
 procedure TForm2.Button1Click(Sender: TObject);
 var
-  Obj : TfetchItemAspectsContentType;
+  Obj: TfetchItemAspectsContentType;
   Json: string;
-  LStats: TJX2Stats;
+  LStats: IJX2Stats;
 begin
   Memo1.Lines.Add('----> Object Container :');
   Obj := nil;
   LStats := nil;
+  LStats := TJX2Stats.Create;
   try
 
-    LStats := TJX2Stats.Create;
-
-    OpenDialog1.InitialDir := ExtractFilePath( ParamStr(0) );
+    OpenDialog1.InitialDir := ExtractFilePath(ParamStr(0));
     if not OpenDialog1.Execute then Exit;
 
     Memo1.Lines.Add('Filename : ' + OpenDialog1.Filename);
@@ -157,59 +170,47 @@ begin
     ShowStats(LStats);
 
   finally
-    LStats.Free;
     Obj.Free;
   end;
   Memo1.GoToTextEnd;
 end;
 
-
 procedure TForm2.Button2Click(Sender: TObject);
 var
   IObj: IfetchItemAspectsContentType;
   Json: string;
-  LStats: TJX2Stats;
+  LStats: IJX2Stats;
 begin
   Memo1.Lines.Add('----> Interfaced Container :');
-  LStats := nil;
-  try
+  LStats := TJX2Stats.Create;
 
-    LStats := TJX2Stats.Create;
+  OpenDialog1.InitialDir := ExtractFilePath(ParamStr(0));
+  if not OpenDialog1.Execute then Exit;
 
-    OpenDialog1.InitialDir := ExtractFilePath( ParamStr(0) );
-    if not OpenDialog1.Execute then Exit;
+  Memo1.Lines.Add('Filename : ' + OpenDialog1.Filename);
+  Json := LoadStringFromFile(OpenDialog1.Filename, TEncoding.UTF8);
 
-    Memo1.Lines.Add('Filename : ' + OpenDialog1.Filename);
-    Json := LoadStringFromFile(OpenDialog1.Filename, TEncoding.UTF8);
+  Memo1.Lines.Add('Deserialization');
+  IObj := JX2.Deserialize<TIfetchItemAspectsContentType>(Json, [], LStats);
+  ShowStats(LStats);
 
-    Memo1.Lines.Add('Deserialization');
-    IObj := JX2.Deserialize(TIfetchItemAspectsContentType, Json, [], LStats) as IfetchItemAspectsContentType;
-    ShowStats(LStats);
+  Memo1.Lines.Add('Serialization');
+  Json := JX2.Serialize(IObj, [], LStats);
+  ShowStats(LStats);
 
-    Memo1.Lines.Add('Serialization');
-    Json := JX2.Serialize(IObj, [], LStats);
-    ShowStats(LStats);
-
-  finally
-    LStats.Free;
-  end;
   Memo1.GoToTextEnd;
 end;
 
-procedure TForm2.ShowStats(AStats: TJX2Stats);
-begin
-  Memo1.Lines.Add('  Operations: ' + AStats.OpCount.ToString);
-  Memo1.Lines.Add(Format('  Duration: %dms: ' , [AStats.DurationMS]));
-  Memo1.Lines.Add('  Variants: ' + AStats.VariantCount.ToString);
-  Memo1.Lines.Add('  TValue: ' + AStats.TValueCount.ToString);
-end;
+{$REGION 'Getter/Setter/Utils'}
 
 procedure TIfetchItemAspectsContentType.SetcategoryTreeId(v: TValue); begin FcategoryTreeId := v; end;
 procedure TIfetchItemAspectsContentType.SetcategoryTreeVersion(v: TValue); begin FcategoryTreeVersion := v; end;
 procedure TIfetchItemAspectsContentType.SetcategoryAspects(v: TJX2ObjList); begin FcategoryAspects := v; end;
 function TIfetchItemAspectsContentType.GetcategoryTreeId: TValue; begin Result := FcategoryTreeId; end;
 function TIfetchItemAspectsContentType.GetcategoryTreeVersion: TValue; begin Result := FcategoryTreeVersion; end;
-function TIfetchItemAspectsContentType.GetcategoryAspects: TJX2ObjList; begin Result := FcategoryAspects; end;
+function TIfetchItemAspectsContentType.GetcategoryAspects: TJX2ObjList;begin Result := FcategoryAspects; end;
+
+{$ENDREGION}
 
 end.
 

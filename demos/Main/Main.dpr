@@ -1,4 +1,4 @@
-program Main;
+﻿program Main;
 
 uses
   System.StartUpCopy,

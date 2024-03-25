@@ -59,13 +59,46 @@ type
   );
   TJX2Settings = set of TJX2Setting;
 
-  TJX2Stats = class(TObject)
-    DurationMS: Int64;
-    OpCount: Int64;
-    VariantCount: Int64;
-    TValueCount: Int64;
+
+  IJX2Stats = interface
+    ['{862BE7D5-BCD7-4B2E-931F-58B6F1B1492D}']
     procedure Clear;
+    function GetDurationMS: Int64;
+    function GetOpsCount: Int64;
+    function GetVariantCount: Int64;
+    function GetTValueCount: Int64;
+    procedure SetDurationMS(v: Int64);
+    procedure SetOpsCount(v: Int64);
+    procedure SetVariantCount(v: Int64);
+    procedure SetTValueCount(v: Int64);
+    procedure IncOpsCount(v: Integer = 1);
+    procedure IncVariantCount(v: Integer = 1);
+    procedure IncTValueCount(v: Integer = 1);
+    property DurationMS: Int64 read GetDurationMS write SetDurationMS;
+    property OpsCount: Int64 read GetOpsCount write SetOpsCount;
+    property VariantCount: Int64 read GetVariantCount write SetVariantCount;
+    property TValueCount: Int64 read GetTValueCount write SetTValueCount;
+  end;
+
+  TJX2Stats = class(TInterfacedObject, IJX2Stats)
+    FDurationMS: Int64;
+    FOpsCount: Int64;
+    FVariantCount: Int64;
+    FTValueCount: Int64;
     constructor Create;
+
+    procedure Clear;
+    function GetDurationMS: Int64;
+    function GetOpsCount: Int64;
+    function GetVariantCount: Int64;
+    function GetTValueCount: Int64;
+    procedure SetDurationMS(v: Int64);
+    procedure SetOpsCount(v: Int64);
+    procedure SetVariantCount(v: Int64);
+    procedure SetTValueCount(v: Int64);
+    procedure IncOpsCount(v: Integer = 1);
+    procedure IncVariantCount(v: Integer = 1);
+    procedure IncTValueCount(v: Integer = 1);
   end;
 
   IJX2 = Interface;
@@ -908,10 +941,10 @@ end;
 
 procedure TJX2Stats.Clear;
 begin
-  Self.DurationMS := 0;
-  Self.OpCount := 0;
-  Self.VariantCount := 0;
-  Self.TValueCount := 0;
+  Self.FDurationMS := 0;
+  Self.FOpsCount := 0;
+  Self.FVariantCount := 0;
+  Self.FTValueCount := 0;
 end;
 
 constructor TJX2Stats.Create;
@@ -919,6 +952,18 @@ begin
   inherited;
   Clear;
 end;
+
+function TJX2Stats.GetDurationMS: Int64; begin Result := FDurationMS; end;
+function TJX2Stats.GetOpsCount: Int64; begin Result := FOpsCount; end;
+function TJX2Stats.GetTValueCount: Int64; begin Result := FVariantCount; end;
+function TJX2Stats.GetVariantCount: Int64; begin Result := FTValueCount; end;
+procedure TJX2Stats.SetDurationMS(v: Int64); begin FDurationMS := v; end;
+procedure TJX2Stats.SetOpsCount(v: Int64); begin FOpsCount := v; end;
+procedure TJX2Stats.SetTValueCount(v: Int64); begin FVariantCount := v; end;
+procedure TJX2Stats.SetVariantCount(v: Int64); begin FTValueCount := v; end;
+procedure TJX2Stats.IncOpsCount(v: Integer = 1); begin FOpsCount := FOpsCount + v; end;
+procedure TJX2Stats.IncVariantCount(v: Integer = 1); begin FVariantCount := FVariantCount + v; end;
+procedure TJX2Stats.IncTValueCount(v: Integer = 1); begin FTValueCount := FTValueCount + v; end;
 
 end.
 

@@ -50,18 +50,17 @@ type
   class var
     FInstance: TJsonX2;
   protected
-    procedure Serialize(AObj: TObject; AJsonObj: TJsonObject; AJsonPatcher: TJX2Patcher; ASettings: TJX2Settings; AStats: TJX2Stats); overload;
-    procedure Deserialize(AObj: TObject; AJsonObj: TJsonObject; ASettings: TJX2Settings; AStats: TJX2Stats); overload;
+    procedure Serialize(AObj: TObject; AJsonObj: TJsonObject; AJsonPatcher: TJX2Patcher; ASettings: TJX2Settings; AStats: IJX2Stats); overload;
+    procedure Deserialize(AObj: TObject; AJsonObj: TJsonObject; ASettings: TJX2Settings; AStats: IJX2Stats); overload;
   public
     constructor Create; overload;
     destructor  Destroy; override;
     class function Beautifier(const AJsonStr : string; Compact: Boolean = False): string;
 
-    function  Serialize(AObj: TObject; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): string; overload;
-    function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): string; overload;
-    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): T; overload;
-    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []; AStats: TJX2Stats = nil): IJX2; overload;
-
+    function  Serialize(AObj: TObject; ASettings: TJX2Settings = []; AStats: IJX2Stats = nil): string; overload;
+    function  Serialize(Intf: IInterface; ASettings: TJX2Settings = []; AStats: IJX2Stats = nil): string; overload;
+    function  Deserialize<T: class, constructor>(const AJsonStr: string; ASettings: TJX2Settings = []; AStats: IJX2Stats = nil): T; overload;
+    function  Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings = []; AStats: IJX2Stats = nil): IJX2; overload;
   end;
 
 var
@@ -116,7 +115,7 @@ procedure  TJsonX2.Serialize(
             AJsonObj: TJsonObject;
             AJsonPatcher: TJX2Patcher;
             ASettings: TJX2Settings;
-            AStats: TJX2Stats
+            AStats: IJX2Stats
           );
 var
 
@@ -152,7 +151,7 @@ begin
   for LField in LFields do
   begin
 
-    if Assigned(AStats) then Inc(AStats.OpCount);
+    if Assigned(AStats) then AStats.IncOpsCount();
 
     LCurObj := nil;
     LJsonName := LField.Name;
@@ -166,7 +165,7 @@ begin
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
-      if Assigned(AStats) then Inc(AStats.VariantCount);
+      if Assigned(AStats) then AStats.IncTValueCount();
       LVariant := LField.GetValue(AObj).AsVariant;
       case FindVarData(LVariant)^.VType of
         varEmpty, varNull:
@@ -198,7 +197,7 @@ begin
     begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
       begin
-        if Assigned(AStats) then Inc(AStats.TValueCount);
+        if Assigned(AStats) then AStats.IncTValueCount();
         if not LField.GetValue(AObj).TryAsType<TValue>(LTValue) then Continue;
         if not (jxoNullify in ASettings) and LTValue.IsEmpty then Continue;
         AJsonObj.InternAddItem(LJsonName).TValueValue := LTValue;
@@ -437,7 +436,7 @@ begin
   end; // for LField in LFields do
 end;
 
-function TJsonX2.Serialize(AObj: TObject; ASettings: TJX2Settings; AStats: TJX2Stats): string;
+function TJsonX2.Serialize(AObj: TObject; ASettings: TJX2Settings; AStats: IJX2Stats): string;
 var
   LJsonObj: TJsonObject;
   LJsonPatcher: TJX2Patcher;
@@ -463,7 +462,7 @@ begin
       LJsonPatcher.Free;
       LJsonObj.Free;
       if Assigned(AStats) then
-        AStats.DurationMS := LWatch.ElapsedMilliseconds;
+        AStats.SetDurationMS( LWatch.ElapsedMilliseconds) ;
     end;
   except
     on Ex: Exception do
@@ -471,7 +470,7 @@ begin
   end;
 end;
 
-function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: TJX2Stats): string;
+function TJsonX2.Serialize(Intf: IInterface; ASettings: TJX2Settings; AStats: IJX2Stats): string;
 begin
   Result := Serialize(Intf as TObject, ASettings, AStats);
 end;
@@ -480,7 +479,7 @@ procedure TJsonX2.Deserialize(
             AObj: TObject;
             AJsonObj: TJsonObject;
             ASettings: TJX2Settings;
-            AStats: TJX2Stats
+            AStats: IJX2Stats
           );
 var
 {$IFNDEF JSX_NOVAR}
@@ -532,7 +531,7 @@ begin
   LFields := GetRTTIFields(AObj);
   for LJIdx := AJsonObj.count - 1 downto 0 do
   begin
-    if Assigned(AStats) then Inc(AStats.OpCount);
+    if Assigned(AStats) then AStats.IncOpsCount();
     LJValue := AJsonObj.Items[LJIdx];
     LJName := AJsonObj.Names[LJIdx];
     LField := GetFieldName(LFields, LJName, LExplicitName);
@@ -549,7 +548,7 @@ begin
     begin
       if LField.FieldType.Handle = TypeInfo(TValue) then
       begin
-        if Assigned(AStats) then Inc(AStats.TValueCount);
+        if Assigned(AStats) then AStats.IncTValueCount();
         LField.SetValue(AObj, LJValue.TValueValue);
       end;
       Continue;
@@ -558,7 +557,7 @@ begin
 {$IFNDEF JSX_NOVAR}
     if LField.FieldType.TypeKind in [tkVariant] then
     begin
-      if Assigned(AStats) then Inc(AStats.VariantCount);
+      if Assigned(AStats) then AStats.IncVariantCount();
       LField.SetValue(AObj, TValue.FromVariant(LJValue.VariantValue));
       Continue
     end;
@@ -614,7 +613,7 @@ begin
         LNewValueList := TJX2ValueList.Create;
         LField.SetValue(AObj, LNewValueList);
         LNewValueList.Capacity := LJValue.ArrayValue.Count;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJValue.ArrayValue.Count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJValue.ArrayValue.Count);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewValueList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
         Continue;
@@ -626,7 +625,7 @@ begin
         LNewVarList := TJX2VarList.Create;
         LField.SetValue(AObj, LNewVarList);
         LNewVarList.Capacity := LJValue.ArrayValue.Count;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJValue.ArrayValue.Count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJValue.ArrayValue.Count);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LNewVarList.Add(LJValue.ArrayValue.V[LIdx]);
         Continue
@@ -637,7 +636,7 @@ begin
         LNewStrVar := TJX2StrVarDic.Create;
         LField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJsObj.count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJsObj.count);
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx],LJsObj.Values[LJsObj.Names[LIdx]]);
         Continue;
@@ -649,7 +648,7 @@ begin
         LNewStrValue := TJX2StrValueDic.Create;
         LField.SetValue(AObj, LNewStrValue);
         LJsObj := LJValue.ObjectValue;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJsObj.count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJsObj.count);
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrValue.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
         Continue
@@ -661,7 +660,7 @@ begin
         LNewStrVar := TJX2StrVarDic.Create;
         LField.SetValue(AObj, LNewStrVar);
         LJsObj := LJValue.ObjectValue;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJsObj.count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJsObj.count);
         for LIdx := 0 to LJsObj.count - 1 do
           LNewStrVar.Add(LJsObj.Names[LIdx], LJsObj.Items[LIdx].Value);
         Continue;
@@ -691,7 +690,7 @@ begin
     if LField.FieldType.TypeKind in [tkInterface] then
     begin
 
-      if Assigned(AStats) then Inc(AStats.OpCount, 1);
+      if Assigned(AStats) then AStats.IncOpsCount();
 
       if LJValue.IsNull then
       begin
@@ -722,7 +721,7 @@ begin
         LINewObjList.Capacity := LJValue.ArrayValue.Count;
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
         begin
-          if Assigned(AStats) then Inc(AStats.OpCount);
+          if Assigned(AStats) then AStats.IncOpsCount();
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
           if Supports(LNewObj, IJX2, LIntf) then
           begin
@@ -738,7 +737,7 @@ begin
         LINewValList := TIJX2ValueList.Create;
         LINewValList.Capacity := LJValue.ArrayValue.Count;
         LField.SetValue(AObj, LINewValList);
-        if Assigned(AStats) then Inc(AStats.OpCount, LJValue.ArrayValue.Count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJValue.ArrayValue.Count);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewValList.Add(LJValue.ArrayValue.Values[LIdx].TValueValue);
         Continue;
@@ -750,7 +749,7 @@ begin
         LINewVarList := TIJX2VarList.Create;
         LINewVarList.Capacity := LJValue.ArrayValue.Count;
         LField.SetValue(AObj, LINewVarList);
-        if Assigned(AStats) then Inc(AStats.OpCount, LJValue.ArrayValue.Count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJValue.ArrayValue.Count);
         for LIdx := 0 to LJValue.ArrayValue.count - 1 do
           LINewVarList.Add(LJValue.ArrayValue.V[LIdx]);
         Continue;
@@ -762,7 +761,7 @@ begin
         LINewStrVarDic := TIJX2StrVarDic.Create;
         LField.SetValue(AObj, LINewStrVarDic);
         LJsObj := LJValue.ObjectValue;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJsObj.count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJsObj.count);
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrVarDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].VariantValue);
         Continue;
@@ -775,7 +774,7 @@ begin
         LINewStrValueDic := TIJX2StrValueDic.Create;
         LField.SetValue(AObj, LINewStrValueDic);
         LJsObj := LJValue.ObjectValue;
-        if Assigned(AStats) then Inc(AStats.OpCount, LJsObj.Count);
+        if Assigned(AStats) then AStats.IncOpsCount(LJsObj.Count);
         for LIdx := 0 to LJsObj.count - 1 do
           LINewStrValueDic.Add(LJsObj.Names[LIdx], LJsObj.Values[LJsObj.Names[LIdx]].TValueValue);
         Continue;
@@ -789,7 +788,7 @@ begin
         LField.SetValue(AObj, LINewStrObjDic);
         for LPair in LJValue.ObjectValue do
         begin
-          if Assigned(AStats) then Inc(AStats.OpCount);
+          if Assigned(AStats) then AStats.IncOpsCount();
           LNewObj := JX2AttrClass(LAttr).FData1.Create;
           Deserialize(LNewObj, LPair.Value.ObjectValue, ASettings, AStats);
           Supports(LNewObj, IJX2, LIntf);
@@ -799,7 +798,7 @@ begin
       end;
 
       begin
-        if Assigned(AStats) then Inc(AStats.OpCount);
+        if Assigned(AStats) then AStats.IncOpsCount();
         if LJValue.ObjectValue = nil then Continue;
         LNewObj := JX2AttrClass(LAttr).FClass.Create;
         Deserialize(LNewObj, LJValue.ObjectValue, ASettings, AStats);
@@ -810,7 +809,7 @@ begin
    end;
 end;
 
-function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats ): T;
+function TJsonX2.Deserialize<T>(const AJsonStr: string; ASettings: TJX2Settings; AStats: IJX2Stats ): T;
 var
   LJsonObj: TJsonBaseObject;
   LObj: T;
@@ -832,7 +831,7 @@ begin
     finally
       LJsonObj.Free;
       if Assigned(AStats) then
-         AStats.DurationMS := LWatch.ElapsedMilliseconds;
+         AStats.SetDurationMS( LWatch.ElapsedMilliseconds );
     end;
   except
     on Ex: Exception do
@@ -844,7 +843,7 @@ begin
   end;
 end;
 
-function TJsonX2.Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings; AStats: TJX2Stats): IJX2;
+function TJsonX2.Deserialize(AIntfClass: TClass; const AJsonStr: string; ASettings: TJX2Settings; AStats: IJX2Stats): IJX2;
 var
   LJsonObj: TJsonBaseObject;
   LTIObj: TObject;
@@ -866,7 +865,8 @@ begin
       supports(LTIObj, IJX2, Result);
     finally
       LJsonObj.Free;
-      if Assigned(AStats) then AStats.DurationMS := LWatch.ElapsedMilliseconds;
+      if Assigned(AStats) then
+        AStats.SetDurationMS( LWatch.ElapsedMilliseconds );
     end;
   except
     on Ex: Exception do

@@ -270,33 +270,32 @@ begin
   // Obj Serialization
 
   Json := JX2.Beautifier(JX2.Serialize(Obj, []), True);
-  Memo1.Lines.Add( 'Object Creation (generate Beauty.json file), Object is :');
+  Memo1.Lines.Add( 'Object Creation --> Serialized, its Json is (to Beauty.json):');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
-
   SaveStringToFile('Beauty.json', Json, TEncoding.UTF8);
 
   // Cloning through serialization
   CloneObj := JX2.Deserialize<TComplexObj>(Json, []);
   Json := JX2.Beautifier(JX2.Serialize(CloneObj, []), True);
-  Memo1.Lines.Add( 'Cloned Object (Json Des/Ser), New Cloned Object is :');
+  Memo1.Lines.Add( 'The Object is cloned using Deserialization/Serialization, New Cloned Object is :');
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
   // Native CLoning
   CloneObj := TComplexObj(Obj.Clone);
-  Memo1.Lines.Add( 'Natively Cloned Object, New Cloned Object is :');
+  Memo1.Lines.Add( 'The Object is now natively Cloned, New Cloned Object is :');
   Json := JX2.Beautifier(JX2.Serialize(CloneObj), True);
   Memo1.Lines.Add( Json + '    Lenght: ' + Length(Json).ToString);
   CloneObj.Free;
 
   // so Beautyful !!! :)
-  Memo2.Lines.Add('Json Beautifier :');
+  Memo2.Lines.Add('The natively clone object Json is Beautified :');
   Memo2.Lines.Add( JX2.Beautifier(Json, False) );
 
 //----------------------------------------------------------------------------//
 
 
-  Memo3.Lines.Add('Read few values from Object:');
+  Memo3.Lines.Add('We Read few Object values:');
 
   Memo3.Lines.Add('String (TValue): ' + Obj.vString.AsString);
   {$IFNDEF JSX_NOVAR}
@@ -333,6 +332,9 @@ begin
     var o := TSimpleObject(i.Value);
     Memo3.Lines.Add('   ' + i.Key + ' : ' + o.var1.AsString + ', ' + o.var2.AsString);
   end;
+
+  Memo3.Lines.Add('A generic stringList :');
+  Memo3.Lines.Add(Obj.TSL.Text);
 
 //----------------------------------------------------------------------------//
 
