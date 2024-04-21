@@ -24,9 +24,7 @@ SOFTWARE.
 
 unit JsonX2.Types;
 
-{$IFDEF W3DCLIENT}
-  {$DEFINE JSX_NOVAR}
-{$ENDIF}
+{$INCLUDE 'OSS.inc'}
 
 interface
 
@@ -34,7 +32,7 @@ uses
   Classes
   , System.Generics.Collections
   , RTTI
-{$IFDEF W3DCLIENT}
+{$IFNDEF JSX_OSS}
   , W3DCloneable
 {$ENDIF}  
   , JsonX2.Obj
@@ -163,7 +161,7 @@ type
 
 { TJX2ToJsonDataBlock }
 
-{$IF not defined(W3DCLIENT)}
+{$IF defined(JSX_OSS)}
   IW3DCloneable = interface
   ['{C6437503-760C-47EA-8F61-4B7F20BE9CA9}']
     function Clone : IW3DCloneable;

@@ -24,6 +24,8 @@ SOFTWARE.
 
 unit JsonX2.Sync;
 
+{$INCLUDE 'OSS.inc'}
+
 interface
 
 uses

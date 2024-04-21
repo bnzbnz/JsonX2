@@ -30,9 +30,7 @@ SOFTWARE.
 
 unit JsonX2.Obj;
 
-{$IFDEF W3DCLIENT}
-  {$DEFINE JSX_NOVAR}
-{$ENDIF}
+{$INCLUDE 'OSS.inc'}
 
 {$IFDEF VER200}
   // Delphi 2009's ErrorInsight parser uses the CompilerVersion's memory address instead of 20.0, failing all the

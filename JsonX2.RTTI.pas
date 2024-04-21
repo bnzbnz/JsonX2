@@ -24,6 +24,8 @@ SOFTWARE.
 
 unit JsonX2.RTTI;
 
+{$INCLUDE 'OSS.inc'}
+
 interface
 uses
     RTTI

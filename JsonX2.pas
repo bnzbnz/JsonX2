@@ -24,9 +24,7 @@ SOFTWARE.
 
 unit JsonX2;
 
-{$IFDEF W3DCLIENT}
-  {$DEFINE JSX_NOVAR}
-{$ENDIF}
+{$INCLUDE 'OSS.inc'}
 
 interface
 

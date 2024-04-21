@@ -1,0 +1,4 @@
+{$DEFINE JSX_OSS}
+{.$DEFINE JSX_NOVAR}
+
+
