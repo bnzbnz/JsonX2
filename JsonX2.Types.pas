@@ -1,4 +1,4 @@
-﻿(*****************************************************************************
+(*****************************************************************************
 The MIT License (MIT)
 
 Copyright (c) 2020-2024 Laurent Meyer JsonX2@ea4d.com
@@ -220,6 +220,8 @@ type
 
   IJX2ObjList = Interface
   ['{A4BF9FFE-1CCB-45F7-A1B6-F643C2895483}']
+    function Count: integer;
+    function GetItems(AIndex: integer): IInterface;
   end;
 
   TIJX2ObjList = class(TList<IJX2>, IJX2ObjList, IJX2)
@@ -233,6 +235,9 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    function Count: integer;
+    function GetItems(AIndex: integer): IInterface;
   end;
 
   IJX2StrVarDic = Interface
@@ -710,6 +715,16 @@ begin
     Destroy;
 end;
 
+function TIJX2ObjList.GetItems(AIndex: integer): IInterface;
+begin
+  Result := Self.Items[AIndex];
+end;
+
+function TIJX2ObjList.Count: integer;
+begin
+  Result := Self.Count;
+end;
+
 function TIJX2ObjList.Clone: IW3DCloneable;
 begin
   Result := CloneSelf;
@@ -964,5 +979,3 @@ procedure TJX2Stats.IncVariantCount(v: Integer = 1); begin FVariantCount := FVar
 procedure TJX2Stats.IncTValueCount(v: Integer = 1); begin FTValueCount := FTValueCount + v; end;
 
 end.
-
-
