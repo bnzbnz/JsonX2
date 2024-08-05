@@ -1,4 +1,4 @@
-﻿(*****************************************************************************
+(*****************************************************************************
 The MIT License (MIT)
 
 Copyright (c) 2020-2024 Laurent Meyer JsonX2@ea4d.com
@@ -184,6 +184,9 @@ type
 
   IJX2ValueList = Interface
   ['{FABCD782-2317-4429-854F-A9F9A7ADAECB}']
+    function Add(AValue: TValue): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): TValue;
   end;
 
   TIJX2ValueList = class(TList<TValue>, IJX2ValueList, IJX2)
@@ -197,10 +200,17 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    function Add(AValue: TValue): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): TValue;
   end;
 
   IJX2VarList = Interface
   ['{CAD572B8-B99C-405C-8946-B10988518E83}']
+    function Add(AValue: Variant): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): Variant;
   end;
 
   {$IFNDEF JSX_NOVAR}
@@ -215,11 +225,18 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    function Add(AValue: Variant): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): Variant;
   end;
   {$ENDIF}
 
   IJX2ObjList = Interface
   ['{A4BF9FFE-1CCB-45F7-A1B6-F643C2895483}']
+    function Add(AIntf: IJX2): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): IJX2;
   end;
 
   TIJX2ObjList = class(TList<IJX2>, IJX2ObjList, IJX2)
@@ -233,10 +250,18 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    function Add(AIntf: IJX2): integer;
+    function Count: integer;
+    function GetItems(AIndex: integer): IJX2;
   end;
 
   IJX2StrVarDic = Interface
   ['{606B2C55-0D3F-4A65-B881-2920D3E3478A}']
+    procedure Add(const AKey: string; const AValue: Variant);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): Variant;
   end;
 
   {$IFNDEF JSX_NOVAR}
@@ -251,11 +276,20 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    procedure Add(const AKey: string; const AValue: Variant);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): Variant;
    end;
    {$ENDIF}
 
   IJX2StrValueDic = Interface
   ['{201214EF-CA76-4E9C-B22A-AACCF1AF94DF}']
+    procedure Add(const AKey: string; const AValue: TValue);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): TValue;
   end;
 
   TIJX2StrValueDic = class(TDictionary<string, TValue>, IJX2StrValueDic, IJX2)
@@ -269,10 +303,19 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    procedure Add(const AKey: string; const AValue: TValue);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): TValue;
   end;
 
   IJX2StrObjDic = Interface
   ['{587F5F53-976C-48E6-95E1-E7331390E727}']
+    procedure Add(const AKey: string; const AValue: IJX2);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): IJX2;
   end;
 
   TIJX2StrObjDic = class(TObjectDictionary<string, IJX2>, IJX2StrObjDic, IJX2)
@@ -286,6 +329,11 @@ type
     function CloneSelf: IJX2;
     procedure CloneTo(ADestIntf: IJX2);
     function Clone: IW3DCloneable;
+
+    procedure Add(const AKey: string; const AValue: IJX2);
+    function Count: integer;
+    function ContainsKey(const AKey: string): Boolean;
+    function GetItem(const AKey: string): IJX2;
   end;
 
 {$ENDREGION'}
@@ -602,6 +650,21 @@ begin
     TIJX2ValueList(ADestIntf).Add(LValue);
 end;
 
+function TIJX2ValueList.GetItems(AIndex: integer): TValue;
+begin
+  Result := Self.Items[AIndex];
+end;
+
+function TIJX2ValueList.Add(AValue: TValue): integer;
+begin
+  Result := Self.Add(AValue);  
+end;
+
+function TIJX2ValueList.Count: integer;
+begin
+  Result := Self.Count;
+end;
+
   {$ENDREGION 'TIJX2ValueList'}
 {$IFNDEF JSX_NOVAR}
   {$REGION 'TIJX2StrVarDic'}
@@ -641,6 +704,26 @@ var
 begin
   for Lkv in Self do
     TIJX2StrVarDic(ADestIntf).Add(Lkv.Key, Lkv.Value);
+end;
+
+procedure TIJX2StrVarDic.Add(const AKey: string; const AValue: Variant);
+begin
+  Result := Self.Add(AKey, AValue);  
+end;
+
+function TIJX2StrVarDic.Count: integer;
+begin
+  Result := Self.Count; 
+end;
+
+function TIJX2StrVarDic.ContainsKey(const AKey: string): Boolean;
+begin
+  Result := Self.ContainsKey(AKey);  
+end;
+
+function TIJX2StrVarDic.GetItem(const AKey: string): Variant;
+begin
+  Result := Items[AKey];  
 end;
 
   {$ENDREGION 'TIJX2StrVarDic'}
@@ -683,6 +766,21 @@ var
 begin
   For LValue in Self do
     TIJX2VarList(ADestIntf).Add(LValue);
+end;
+
+function TIJX2VarList.GetItems(AIndex: integer): Variant;
+begin
+  Result := Self.Items[AIndex];
+end;
+
+function TIJX2VarList.Add(AValue: Variant): integer;
+begin
+  Result := Self.Add(AValue);  
+end;
+
+function TIJX2VarList.Count: integer;
+begin
+  Result := Self.Count;
 end;
 
   {$ENDREGION 'TIJX2VarList'}
@@ -733,6 +831,21 @@ begin
       ADestIntf := Nil;
 end;
 
+function TIJX2ObjList.GetItems(AIndex: integer): IJX2;
+begin
+  Result := Self.Items[AIndex];
+end;
+
+function TIJX2ObjList.Add(AIntf: IJX2): integer;
+begin
+  Result := Self.Add(AIntf);  
+end;
+
+function TIJX2ObjList.Count: integer;
+begin
+  Result := Self.Count;
+end;
+
   {$ENDREGION 'TIJX2ObjList'}
 
   {$REGION 'TIJX2StrValueDic'}
@@ -772,6 +885,26 @@ var
 begin
   for Lkv in Self do
     TIJX2StrValueDic(ADestIntf).Add(Lkv.Key, Lkv.Value);
+end;
+
+procedure TIJX2StrValueDic.Add(const AKey: string; const AValue: TValue);
+begin
+  Self.Add(AKey, AValue);  
+end;
+
+function TIJX2StrValueDic.Count: integer;
+begin
+  Result := Self.Count; 
+end;
+
+function TIJX2StrValueDic.ContainsKey(const AKey: string): Boolean;
+begin
+  Result := Self.ContainsKey(AKey);  
+end;
+
+function TIJX2StrValueDic.GetItem(const AKey: string): TValue;
+begin
+  Result := Items[AKey];  
 end;
 
   {$ENDREGION 'TIJX2StrValueDic'}
@@ -815,6 +948,26 @@ var
 begin
   for Lkv in Self do
     TIJX2StrObjDic(ADestIntf).Add(Lkv.Key, Lkv.Value);
+end;
+
+procedure TIJX2StrObjDic.Add(const AKey: string; const AValue: IJX2);
+begin
+  Self.Add(AKey, AValue);  
+end;
+
+function TIJX2StrObjDic.Count: integer;
+begin
+  Result := Self.Count; 
+end;
+
+function TIJX2StrObjDic.ContainsKey(const AKey: string): Boolean;
+begin
+  Result := Self.ContainsKey(AKey);  
+end;
+
+function TIJX2StrObjDic.GetItem(const AKey: string): IJX2;
+begin
+  Result := Items[AKey];  
 end;
 
   {$ENDREGION 'TIJX2StrObjDic'}
