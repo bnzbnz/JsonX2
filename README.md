@@ -1,3 +1,5 @@
+﻿JsonX2 has been superseded by JsonX4 : https://github.com/bnzbnz/JsonX4
+=================
 # Delphi JsonX2
 Json Extended framework V2 for Delphi (VCL/FMX)
 
